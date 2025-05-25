@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Toaster } from "@/components/ui/sonner"
 import useFetch from "@/hooks/useFetch"
 import { MoveDown, MoveRight, Star } from "lucide-react"
-import { useParams } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import { toast } from "sonner"
 import { format, formatDistance } from "date-fns";
 import axios from "axios"
@@ -14,16 +14,17 @@ const apiUri = import.meta.env.VITE_REACT_API_URI
 
 const RideDetail = () => {
   const { rideId } = useParams();
+  const navigate = useNavigate();
   const { loading, data, error } = useFetch(`rides/${rideId}`);
 
   const handleBook = async() => {
     try{
       const res = await axios.get(`${apiUri}/rides/${rideId}/join`, {withCredentials: true})
-      toast(res, {
-        description: format(new Date(), "PPp"),
-      });
+      toast.success("Booking successful!");
+      navigate(`/ride/${rideId}/confirmed`, { state: { rideData: data } });
     }catch(err){
-      console.log(err)
+      toast.error("Failed to book ride");
+      console.error(err);
     }
   };
 

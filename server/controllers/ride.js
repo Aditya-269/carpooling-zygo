@@ -1,5 +1,6 @@
 import Ride from "../models/Ride.js"
-import User from "../models/User.js"; 
+import User from "../models/User.js";
+import Rating from "../models/Rating.js";
 
 export const getRide = async (req, res, next) => {
   try{
@@ -107,5 +108,52 @@ export const deleteRide = async(req, res, next) => {
     res.status(200).send("ride has been deleted");
   }catch(err){
     next(err)
+  }
+}
+
+export const rateRide = async(req, res, next) => {
+  try {
+    const ride = await Ride.findById(req.params.id);
+    if (!ride) {
+      return res.status(404).json({ message: 'Ride not found' });
+    }
+
+    // Check if user was a passenger in this ride
+    if (!ride.passengers.includes(req.user.id)) {
+      return res.status(403).json({ message: 'Only passengers can rate this ride' });
+    }
+
+    // Check if user has already rated this ride
+    const existingRating = await Rating.findOne({
+      rater: req.user.id,
+      ride: ride._id
+    });
+
+    if (existingRating) {
+      return res.status(400).json({ message: 'You have already rated this ride' });
+    }
+
+    const rating = new Rating({
+      rater: req.user.id,
+      ratedUser: ride.creator,
+      stars: req.body.rating,
+      ride: ride._id
+    });
+
+    await rating.save();
+
+    // Update user's ratings array and recalculate average stars
+    const ratedUser = await User.findById(ride.creator);
+    ratedUser.ratings.push(rating._id);
+    
+    const allRatings = await Rating.find({ ratedUser: ride.creator });
+    const totalStars = allRatings.reduce((sum, r) => sum + r.stars, 0);
+    ratedUser.stars = totalStars / allRatings.length;
+
+    await ratedUser.save();
+
+    res.status(200).json({ message: 'Rating submitted successfully' });
+  } catch(err) {
+    next(err);
   }
 }

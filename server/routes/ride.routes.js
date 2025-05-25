@@ -1,5 +1,5 @@
 import express from "express";
-import { createRide, getAllRides, getRide, updateRide, deleteRide, findRides, joinRide } from "../controllers/ride.js";
+import { createRide, getAllRides, getRide, updateRide, deleteRide, findRides, joinRide, rateRide } from "../controllers/ride.js";
 import { verifyAdmin, verifyToken, verifyUser } from "../utils/verifyToken.js";
 
 const router = express.Router()
@@ -10,6 +10,7 @@ router.get("/find", findRides)
 
 router.get("/:id", getRide)
 router.get("/:id/join", verifyToken, joinRide)
+router.post("/:id/rate", verifyToken, rateRide)
 router.patch("/:id", verifyUser, updateRide)
 router.delete("/:id", verifyToken, deleteRide)
 
