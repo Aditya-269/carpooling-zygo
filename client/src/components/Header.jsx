@@ -7,19 +7,33 @@ import LoginSignupDialog from "./LoginSignupDialog";
 import { AuthContext } from "@/context/AuthContext";
 import { useContext } from "react";
 import axios from "axios";
+import { useTheme } from "next-themes";
+import { useState, useEffect } from "react";
+import { Sun, Moon } from "lucide-react";
 const apiUri = import.meta.env.VITE_REACT_API_URI
 
 const Header = () => {
   const {user, dispatch} = useContext(AuthContext)
   const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   const handleLogout = async () => {
-    try{
-      await axios.get(`${apiUri}/auth/logout`, {withCredentials: true});
+    try {
+      await axios.get(`${apiUri}/auth/logout`, {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
       dispatch({ type: 'LOGOUT' });
       navigate("/");
-    }catch(err){
-      console.log(err)
+    } catch (err) {
+      console.error("Logout error:", err);
+      // Still clear local state even if server request fails
+      dispatch({ type: 'LOGOUT' });
+      navigate("/");
     }
   };
 
@@ -51,6 +65,22 @@ const Header = () => {
           </nav>
 
           <div className="flex items-center gap-4">
+            {mounted && (
+              <div className="relative">
+                <button
+                  className="p-2 rounded-full border border-border bg-background hover:bg-accent transition-colors"
+                  aria-label="Toggle theme"
+                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                >
+                  {theme === "dark" ? (
+                    <Sun className="h-5 w-5 text-yellow-400" />
+                  ) : (
+                    <Moon className="h-5 w-5 text-gray-800 dark:text-gray-200" />
+                  )}
+                </button>
+                
+              </div>
+            )}
             {!user ? (
               <LoginSignupDialog />
             ) : (

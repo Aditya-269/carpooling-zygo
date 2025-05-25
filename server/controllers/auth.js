@@ -64,10 +64,13 @@ export const login = async(req, res, next)=>{
 }
 
 export const logout = async (req, res, next) => {
-  try{
+  try {
     res.clearCookie("accessToken", {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/',
+      domain: process.env.COOKIE_DOMAIN || undefined
     });
     res.status(200).json({ message: "Logged out successfully" });
   } catch (err) {
