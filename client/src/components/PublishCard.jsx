@@ -9,17 +9,25 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { Toaster } from "./ui/sonner";
 import { toast } from "sonner";
+import LocationAutocomplete from "./LocationAutocomplete";
 const apiUri = import.meta.env.VITE_REACT_API_URI
 
 const formSchema = z.object({
-  from: z.string(),
-  to: z.string(),
+  from: z.string().min(1, "Please enter a departure location"),
+  to: z.string().min(1, "Please enter a destination"),
+  fromCoordinates: z.object({
+    lat: z.number(),
+    lng: z.number()
+  }).optional(),
+  toCoordinates: z.object({
+    lat: z.number(),
+    lng: z.number()
+  }).optional(),
   seat: z.number().min(1).max(10),
   price: z.number().nonnegative(),
   startTime: z.date().min(new Date()),
   endTime: z.date().min(new Date())
 })
-
 
 const PublishCard = () => {
   const form = useForm({
@@ -27,6 +35,8 @@ const PublishCard = () => {
     defaultValues: {
       from: "",
       to: "",
+      fromCoordinates: undefined,
+      toCoordinates: undefined,
       seat: 1,
       price: 0,
       startTime: new Date(),
@@ -36,23 +46,62 @@ const PublishCard = () => {
 
   const onSubmit = async (data) => {
     try {
-      const body = {
-        "availableSeats": data.seat,
-        "origin": {
-          "place": data.from,
-        },
-        "destination": {
-          "place": data.to,
-        },
-        "startTime": data.startTime,
-        "endTime": data.endTime,
-        "price": data.price
+      // Ensure we have coordinates for both locations
+      if (!data.fromCoordinates || !data.toCoordinates) {
+        toast.error("Please select valid locations from the suggestions");
+        return;
       }
-      await axios.post(`${apiUri}/rides`, body, {withCredentials: true});
-      toast("The ride has been Created")
-      form.reset()
+
+      // Format dates to ensure they're in the correct format
+      const startTime = new Date(data.startTime);
+      const endTime = new Date(data.endTime);
+
+      // Validate dates
+      if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
+        toast.error("Invalid date format");
+        return;
+      }
+
+      const body = {
+        availableSeats: Number(data.seat),
+        origin: {
+          place: data.from,
+          coordinates: [data.fromCoordinates.lng, data.fromCoordinates.lat]
+        },
+        destination: {
+          place: data.to,
+          coordinates: [data.toCoordinates.lng, data.toCoordinates.lat]
+        },
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
+        price: Number(data.price)
+      };
+
+      console.log('Sending ride data:', JSON.stringify(body, null, 2)); // Debug log
+
+      const response = await axios.post(`${apiUri}/rides`, body, {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.status === 201 || response.status === 200) {
+        toast.success("Ride created successfully!");
+        form.reset();
+      } else {
+        throw new Error('Unexpected response from server');
+      }
     } catch (error) {
-      console.error('POST request failed:', error);
+      console.error('Error creating ride:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      console.error('Error headers:', error.response?.headers);
+      
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          'Failed to create ride. Please try again.';
+      toast.error(errorMessage);
     }
   };
 
@@ -63,33 +112,60 @@ const PublishCard = () => {
         <CardDescription>Publish your ride with just one click.</CardDescription>
       </CardHeader>
       <CardContent>
-
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="grid w-full items-center gap-4">
           <FormField
             control={form.control}
             name="from"
             render={({ field }) => (
-              <FormItem className="flex flex-col space-y-1.5">
-                <FormLabel>From</FormLabel>
-                <FormControl>
-                  <Input placeholder="From" required {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+              <LocationAutocomplete
+                label="From"
+                placeholder="Enter pickup location"
+                value={field.value}
+                onChange={(value) => {
+                  field.onChange(value);
+                  if (!value) {
+                    form.setValue('fromCoordinates', undefined);
+                  }
+                }}
+                onPlaceSelect={(place) => {
+                  if (place) {
+                    form.setValue('fromCoordinates', {
+                      lat: place.lat,
+                      lng: place.lng
+                    });
+                    form.setValue('from', place.name || place.address);
+                  }
+                }}
+                error={form.formState.errors.from?.message}
+              />
             )}
           />
           <FormField
             control={form.control}
             name="to"
             render={({ field }) => (
-              <FormItem className="flex flex-col space-y-1.5">
-                <FormLabel>To</FormLabel>
-                <FormControl>
-                  <Input placeholder="To" required {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+              <LocationAutocomplete
+                label="To"
+                placeholder="Enter drop-off location"
+                value={field.value}
+                onChange={(value) => {
+                  field.onChange(value);
+                  if (!value) {
+                    form.setValue('toCoordinates', undefined);
+                  }
+                }}
+                onPlaceSelect={(place) => {
+                  if (place) {
+                    form.setValue('toCoordinates', {
+                      lat: place.lat,
+                      lng: place.lng
+                    });
+                    form.setValue('to', place.name || place.address);
+                  }
+                }}
+                error={form.formState.errors.to?.message}
+              />
             )}
           />
           <div className="flex gap-24">
