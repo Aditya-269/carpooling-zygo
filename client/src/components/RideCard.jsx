@@ -28,13 +28,9 @@ const RideCard = ({details}) => {
       </div>
       <div>
         <div className="inline-flex items-center">
-          <Avatar>
-            <AvatarImage src="https://github.com/shadcn.png" />
-            <AvatarFallback>Profile</AvatarFallback>
-          </Avatar>
+         
           <span className="flex-grow flex flex-col pl-4">
             <span className="title-font font-medium">{creator.name}</span>
-            <span className="text-muted-foreground text-xs tracking-widest mt-0.5">UI DEVELOPER</span>
           </span>
         </div>
       </div>

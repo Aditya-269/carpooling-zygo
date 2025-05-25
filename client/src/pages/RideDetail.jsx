@@ -53,11 +53,9 @@ const RideDetail = () => {
           </div>
 
           <div className="w-full py-3 border-t">
-            <p className="text-base">BMW X5 (Black)</p>
+            <p className="text-base">Maruti Suzuki Swift (Black)</p>
           </div>
-          <div className="w-full py-3 border-t">
-            <p>Duration: {data && formatDistance(new Date(data.startTime), new Date(data.endTime))}</p>
-          </div>
+          
           <div className="w-full py-3 border-t">
             <p className="text-base">Seats: {data?.availableSeats}</p>
           </div>
@@ -97,8 +95,7 @@ const RideDetail = () => {
                 </div>
               </div>
               <div className="flex justify-center items-start flex-col space-y-4 mt-8">
-                <p className="text-base font-semibold leading-4 text-center md:text-left">About John</p>
-                <p className="text-sm text-muted-foreground">{data?.creator.age} y/o</p>
+                <p className="text-base font-semibold leading-4 text-center md:text-left">About </p>
                 <p className="text-sm text-muted-foreground">{data?.creator.ridesCreated?.length} Rides published</p>
                 <p className="text-sm text-muted-foreground">Member since {data?.createdAt.substring(0, 4)}</p>
               </div>
