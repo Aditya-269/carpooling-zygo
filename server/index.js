@@ -3,6 +3,9 @@ import dotenv from "dotenv"
 import mongoose from "mongoose"
 import cors from "cors"
 import cookieParser from "cookie-parser"
+import chatRoutes from "./routes/chat.routes.js"
+import http from "http"
+import { Server as SocketIOServer } from "socket.io"
 
 import authRoute from "./routes/auth.routes.js"
 import userRoute from "./routes/user.routes.js"
@@ -10,6 +13,13 @@ import rideRoute from "./routes/ride.routes.js"
 
 const app = express()
 const PORT = 8080;
+const server = http.createServer(app);
+const io = new SocketIOServer(server, {
+  cors: {
+    origin: process.env.ORIGIN || '*',
+    credentials: true,
+  },
+});
 
 dotenv.config()
 
@@ -37,7 +47,16 @@ app.use(express.json())
 app.use("/api/users", userRoute);
 app.use("/api/auth", authRoute);
 app.use("/api/rides", rideRoute);
+app.use("/api/chat", chatRoutes);
 
+io.on("connection", (socket) => {
+  socket.on("join", ({ rideId }) => {
+    socket.join(rideId);
+  });
+  socket.on("message", ({ rideId, message }) => {
+    socket.to(rideId).emit("message", message);
+  });
+});
 
 app.use((err, req, res, next)=>{
   const errorStatus = err.status || 500;
@@ -49,7 +68,7 @@ app.use((err, req, res, next)=>{
   })
 })
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   connectDB()
   console.log(`Connected to backend on PORT: ${PORT}`)
 })

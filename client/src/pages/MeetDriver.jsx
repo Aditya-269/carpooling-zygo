@@ -4,10 +4,18 @@ import { Card } from "@/components/ui/card";
 import { Phone, MessageCircle, MapPin } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import useFetch from "@/hooks/useFetch";
+import GoogleMap from "@/components/GoogleMap";
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useState } from "react";
+import RideChat from "@/components/RideChat";
+import { useContext } from "react";
+import { AuthContext } from "@/context/AuthContext";
 
 const MeetDriver = () => {
   const { rideId } = useParams();
   const { data: rideData } = useFetch(`rides/${rideId}`);
+  const [open, setOpen] = useState(false);
+  const { user } = useContext(AuthContext);
 
   return (
     <main className="container max-w-md mx-auto py-8 px-4">
@@ -34,24 +42,39 @@ const MeetDriver = () => {
               <MapPin className="w-5 h-5 text-muted-foreground" />
               <p>{rideData?.origin?.place}</p>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <Button className="flex items-center justify-center space-x-2">
-                <Phone className="w-4 h-4" />
-                <span>Call</span>
-              </Button>
-              <Button variant="outline" className="flex items-center justify-center space-x-2">
-                <MessageCircle className="w-4 h-4" />
-                <span>Message</span>
-              </Button>
+            <div className="flex items-center justify-center mt-6">
+              <Dialog open={open} onOpenChange={setOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="flex items-center justify-center space-x-2">
+                    <MessageCircle className="w-4 h-4" />
+                    <span>Message</span>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Chat with Driver</DialogTitle>
+                  </DialogHeader>
+                  <RideChat rideId={rideId} user={user} />
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         </Card>
 
-        <div className="h-64 bg-muted rounded-lg mb-6">
-          {/* Map component will be integrated here */}
-          <div className="w-full h-full flex items-center justify-center">
-            <p className="text-muted-foreground">Map View</p>
-          </div>
+        <div className="h-64 bg-muted rounded-lg mb-6 overflow-hidden">
+          {/* Google Map integration */}
+          {rideData?.origin?.coordinates ? (
+            <GoogleMap
+              lat={rideData.origin.coordinates[1]}
+              lng={rideData.origin.coordinates[0]}
+              zoom={15}
+              style={{ width: '100%', height: '100%' }}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <p className="text-muted-foreground">Map not available</p>
+            </div>
+          )}
         </div>
 
         <Link to={`/ride/${rideId}/tracking`}>
