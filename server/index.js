@@ -7,6 +7,7 @@ import cookieParser from "cookie-parser"
 import authRoute from "./routes/auth.routes.js"
 import userRoute from "./routes/user.routes.js"
 import rideRoute from "./routes/ride.routes.js"
+import paymentRoute from "./routes/payment.routes.js"
 
 const app = express()
 const PORT = 8080;
@@ -37,6 +38,7 @@ app.use(express.json())
 app.use("/api/users", userRoute);
 app.use("/api/auth", authRoute);
 app.use("/api/rides", rideRoute);
+app.use("/api/payments", paymentRoute);
 
 
 app.use((err, req, res, next)=>{

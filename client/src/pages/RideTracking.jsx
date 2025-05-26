@@ -57,8 +57,8 @@ const RideTracking = () => {
           </div>
         </Card>
 
-        <Link to={`/ride/${rideId}/complete`}>
-          <Button className="w-full">Complete Ride</Button>
+        <Link to={`/ride/${rideId}/payment`}>
+          <Button className="w-full">Payment</Button>
         </Link>
       </div>
     </main>

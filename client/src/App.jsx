@@ -12,6 +12,7 @@ import RideConfirmed from './pages/RideConfirmed'
 import MeetDriver from './pages/MeetDriver'
 import RideTracking from './pages/RideTracking'
 import RideComplete from './pages/RideComplete'
+import Payment from './pages/Payment'
 
 function App() {
 
@@ -27,6 +28,7 @@ function App() {
       <Route path="/ride/:rideId/confirmed" element={<RideConfirmed />} />
       <Route path="/ride/:rideId/meet-driver" element={<MeetDriver />} />
       <Route path="/ride/:rideId/tracking" element={<RideTracking />} />
+      <Route path="/ride/:rideId/payment" element={<Payment />} />
       <Route path="/ride/:rideId/complete" element={<RideComplete />} />
       <Route path="/profile" element={<Profile />} />
     </Routes>
