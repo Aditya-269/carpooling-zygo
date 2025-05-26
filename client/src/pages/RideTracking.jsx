@@ -197,6 +197,7 @@ const RideTracking = () => {
           </div>
         </Card>
 
+<<<<<<< HEAD
         <Button
           className="w-full"
           onClick={async () => {
@@ -212,6 +213,11 @@ const RideTracking = () => {
             }
           }}
         >Payment</Button>
+=======
+        <Link to={`/ride/${rideId}/payment`}>
+          <Button className="w-full">Payment</Button>
+        </Link>
+>>>>>>> 776dedff2f102a9333111c6bd5840627d9f270f5
       </div>
     </main>
   );

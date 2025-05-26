@@ -10,6 +10,7 @@ import { Server as SocketIOServer } from "socket.io"
 import authRoute from "./routes/auth.routes.js"
 import userRoute from "./routes/user.routes.js"
 import rideRoute from "./routes/ride.routes.js"
+import paymentRoute from "./routes/payment.routes.js"
 
 const app = express()
 const PORT = 8080;
@@ -47,7 +48,11 @@ app.use(express.json())
 app.use("/api/users", userRoute);
 app.use("/api/auth", authRoute);
 app.use("/api/rides", rideRoute);
+<<<<<<< HEAD
 app.use("/api/chat", chatRoutes);
+=======
+app.use("/api/payments", paymentRoute);
+>>>>>>> 776dedff2f102a9333111c6bd5840627d9f270f5
 
 io.on("connection", (socket) => {
   socket.on("join", ({ rideId }) => {
