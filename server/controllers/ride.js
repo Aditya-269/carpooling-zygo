@@ -4,12 +4,19 @@ import Rating from "../models/Rating.js";
 
 export const getRide = async (req, res, next) => {
   try{
-    const ride = await Ride.findById(req.params.id).populate('creator', 'name age stars rating profile ridesCreated createdAt').lean(); 
+    // Remove lean() to ensure all document properties are preserved
+    const ride = await Ride.findById(req.params.id).populate('creator', 'name age stars rating profile ridesCreated createdAt'); 
     if (!ride) {
       return res.status(404).json({ message: 'Ride not found' });
     }
 
-    res.status(200).json(ride); 
+    // Convert to plain object manually to ensure tags are included
+    const rideObj = ride.toObject();
+    
+    // Log the ride object to verify tags are included
+    console.log('Ride tags:', rideObj.tags);
+    
+    res.status(200).json(rideObj); 
   }catch(err){
     next(err);
   }
@@ -26,7 +33,7 @@ export const getAllRides = async (req, res, next) => {
 
 export const findRides = async (req, res, next) => {
   try {
-    const { from, to, seat, date } = req.query;
+    const { from, to, seat, date, tags } = req.query;
     
     if (!from || !to || !seat || !date) {
         return res.status(400).json({ message: 'Please provide all the details' });
@@ -34,14 +41,23 @@ export const findRides = async (req, res, next) => {
     const searchDate = new Date(date)
     searchDate.setHours(0, 0, 0, 0); // Set to midnight of the specified date
 
-    const rides = await Ride.find({
+    // Build query object
+    const query = {
         'origin.place': new RegExp(from, 'i'),
         'destination.place': new RegExp(to, 'i'),
         'availableSeats': { $gte: seat},
-        'startTime': { $gte: searchDate.toISOString(), $lt: new Date(searchDate.getTime() + 24 * 60 * 60 * 1000).toISOString() } // Filter rides up to next midnight
-    })
-    .populate('creator', 'name profilePicture stars') 
-    .lean(); 
+        'startTime': { $gte: searchDate.toISOString(), $lt: new Date(searchDate.getTime() + 24 * 60 * 60 * 1000).toISOString() }
+    };
+
+    // Add tags filter if provided
+    if (tags) {
+        const tagArray = tags.split(',');
+        query.tags = { $all: tagArray };
+    }
+
+    const rides = await Ride.find(query)
+        .populate('creator', 'name profilePicture stars') 
+        .lean(); 
     res.status(200).json({ success: true, rides });
   } catch (err) {
     next(err);

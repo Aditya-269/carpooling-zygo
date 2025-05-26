@@ -3,8 +3,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Toaster } from "@/components/ui/sonner"
+import { Badge } from "@/components/ui/badge"
 import useFetch from "@/hooks/useFetch"
-import { MoveDown, MoveRight, Star } from "lucide-react"
+import { MoveDown, MoveRight, Star, Cigarette, PawPrint, Wind, Car, Zap, Music } from "lucide-react"
 import { useNavigate, useParams } from "react-router-dom"
 import { toast } from "sonner"
 import { format, formatDistance } from "date-fns";
@@ -62,6 +63,25 @@ const RideDetail = () => {
           </div>
           <div className="w-full py-3 border-t">
             <p className="text-base">Total Price for 1 Passenger: ₹{data?.price}</p>
+          </div>
+          <div className="w-full py-3 border-t">
+            <p className="text-base mb-2">Ride Tags:</p>
+            <div className="flex flex-wrap gap-2">
+              {data?.tags?.map((tag) => (
+                <Badge key={tag} variant="outline" className="flex items-center gap-1">
+                  {tag === 'AC' && <Wind className="h-3 w-3" />}
+                  {tag === 'Music' && <Music className="h-3 w-3" />}
+                  {tag === 'Pet Friendly' && <PawPrint className="h-3 w-3" />}
+                  {tag === 'No Smoking' && <Cigarette className="h-3 w-3" />}
+                  {tag === 'Ladies Only' && <Car className="h-3 w-3" />}
+                  {tag === 'Express Route' && <Zap className="h-3 w-3" />}
+                  {tag}
+                </Badge>
+              ))}
+              {(!data?.tags || data.tags.length === 0) && (
+                <span className="text-muted-foreground text-sm">No tags specified</span>
+              )}
+            </div>
           </div>
           <AlertDialog>
             <AlertDialogTrigger asChild>
