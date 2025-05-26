@@ -45,6 +45,9 @@ const RideCard = ({details}) => {
         <div className="inline-flex items-center">
           <span className="flex-grow flex flex-col pl-4">
             <span className="title-font font-medium">{creator.name}</span>
+            {creator?.trustScore !== undefined && (
+              <span className="text-sm text-muted-foreground">Trust: {creator.trustScore.toFixed(0)}</span>
+            )}
           </span>
         </div>
         {tags && tags.length > 0 && (
