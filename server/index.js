@@ -41,7 +41,7 @@ app.set("io", io);
 app.use(cors({
     origin: process.env.ORIGIN,
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     exposedHeaders: ['set-cookie']
   }

@@ -70,6 +70,9 @@ export const joinRide = async (req, res, next) => {
   try {
     const ride = await Ride.findById(req.params.id).populate('creator', 'name');
 
+    if (ride.creator.toString() === req.user.id) {
+      return res.status(400).json('You cannot join your own ride!');
+    }
     if (ride.passengers.includes(req.user.id)) {
       return res.status(400).json('You already joined this ride!');
     }

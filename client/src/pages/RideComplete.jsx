@@ -57,14 +57,14 @@ const RideComplete = () => {
                 ))}
               </div>
             </div>
-
-            <Button
+            <Link to="/">  <Button
               className="w-full"
               onClick={handleRating}
               disabled={rating === 0}
             >
               Submit Rating
-            </Button>
+            </Button></Link>
+          
           </div>
         </Card>
 
