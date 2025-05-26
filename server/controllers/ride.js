@@ -1,6 +1,8 @@
 import Ride from "../models/Ride.js"
 import User from "../models/User.js";
 import Rating from "../models/Rating.js";
+import { createNotification } from "./notification.js";
+import { format } from "date-fns";
 
 export const getRide = async (req, res, next) => {
   try{
@@ -64,28 +66,45 @@ export const findRides = async (req, res, next) => {
   }
 }
 
-export const joinRide = async (req, res, next) =>{
-  try{
-    const ride = await Ride.findById(req.params.id);
+export const joinRide = async (req, res, next) => {
+  try {
+    const ride = await Ride.findById(req.params.id).populate('creator', 'name');
 
     if (ride.passengers.includes(req.user.id)) {
-      res.status(400).json('You already joined this ride!');
+      return res.status(400).json('You already joined this ride!');
     }
     if (ride.passengers.length >= ride.availableSeats) {
-      res.status(400).json('Ride is full!');
+      return res.status(400).json('Ride is full!');
     }
 
     await Ride.updateOne(
       { _id: ride._id },
       { $push: { passengers: req.user.id }, $inc: { availableSeats: -1 } }
-    ),
+    );
+    
     await User.updateOne(
       { _id: req.user.id },
       { $push: { ridesJoined: ride._id } }
-    ),
+    );
+
+    // Fetch the user's name from the database
+    const user = await User.findById(req.user.id);
+    const userName = user ? user.name : 'Someone';
+
+    // Create notification for the ride creator
+    const message = `${userName} has booked your ride from ${ride.origin.place} to ${ride.destination.place} on ${format(new Date(ride.startTime), 'PPp')}`;
+    
+    await createNotification(
+      ride.creator._id,
+      req.user.id,
+      ride._id,
+      message,
+      'booking',
+      req
+    );
 
     res.status(200).json({ message: 'Successfully joined the ride!' });
-  }catch(err){
+  } catch (err) {
     next(err);
   }
 }
