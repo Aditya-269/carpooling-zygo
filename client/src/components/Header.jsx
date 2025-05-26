@@ -43,7 +43,7 @@ const Header = () => {
         <div className="flex h-16 items-center justify-between">
           <NavLink to="/" className="inline-flex items-center gap-2 transition-opacity hover:opacity-80"> 
       <div className="pt-8 px-6 w-16 mb-10">
-        <h3 className="font-rock-salt text-2xl text-black/80">Zygo</h3>
+        <h3 className="font-rock-salt text-2xl text-foreground">Zygo</h3>
       </div>       
          </NavLink>
           
