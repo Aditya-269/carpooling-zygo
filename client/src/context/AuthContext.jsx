@@ -1,4 +1,4 @@
-import { createContext, useEffect, useReducer } from "react"
+import { createContext, useEffect, useReducer, useContext } from "react"
 
 const INITIAL_STATE = {
   user: JSON.parse(localStorage.getItem("user")) || null,
@@ -7,6 +7,14 @@ const INITIAL_STATE = {
 }
 
 export const AuthContext = createContext(INITIAL_STATE);
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthContextProvider');
+  }
+  return context;
+};
 
 const AuthReducer = (state, action) => {
   switch(action.type){

@@ -9,6 +9,7 @@ import { useNavigate, useParams } from "react-router-dom"
 import { toast } from "sonner"
 import { format, formatDistance } from "date-fns";
 import axios from "axios"
+import { useAuth } from "@/context/AuthContext"
 
 const apiUri = import.meta.env.VITE_REACT_API_URI
 
@@ -16,6 +17,7 @@ const RideDetail = () => {
   const { rideId } = useParams();
   const navigate = useNavigate();
   const { loading, data, error } = useFetch(`rides/${rideId}`);
+  const { user } = useAuth();
 
   const handleBook = async() => {
     try{
@@ -23,7 +25,8 @@ const RideDetail = () => {
       toast.success("Booking successful!");
       navigate(`/ride/${rideId}/confirmed`, { state: { rideData: data } });
     }catch(err){
-      toast.error("Failed to book ride");
+      const errorMessage = err.response?.data || "Failed to book ride";
+      toast.error(errorMessage);
       console.error(err);
     }
   };
@@ -35,6 +38,8 @@ const RideDetail = () => {
   if (error) {
     return <h3 className="text-xl p-10 text-center h-svh">Error: {error.message || "ride not found"}</h3>;
   }
+
+  const isCreator = user && data?.creator?._id === user._id;
 
   return (
     <main className="pb-12 md:py-14 px-6 2xl:px-20 2xl:container 2xl:mx-auto">
@@ -65,7 +70,7 @@ const RideDetail = () => {
           </div>
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button>Book Ride</Button>
+              <Button disabled={isCreator}>{isCreator ? "Cannot Book Own Ride" : "Book Ride"}</Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
