@@ -26,7 +26,10 @@ const RideDetail = () => {
       toast.success("Booking successful!");
       navigate(`/ride/${rideId}/confirmed`, { state: { rideData: data } });
     }catch(err){
-      const errorMessage = err.response?.data || "Failed to book ride";
+      const errorMessage = err.response?.data?.message || 
+                          err.response?.data?.error || 
+                          err.message || 
+                          "Failed to book ride";
       toast.error(errorMessage);
       console.error(err);
     }
@@ -37,7 +40,7 @@ const RideDetail = () => {
   }
 
   if (error) {
-    return <h3 className="text-xl p-10 text-center h-svh">Error: {error.message || "ride not found"}</h3>;
+    return <h3 className="text-xl p-10 text-center h-svh">Error: {error}</h3>;
   }
 
   const isCreator = user && data?.creator?._id === user._id;

@@ -10,6 +10,8 @@ import axios from "axios";
 import { useTheme } from "next-themes";
 import { useState, useEffect } from "react";
 import { Sun, Moon } from "lucide-react";
+import NotificationBell from "./NotificationBell";
+
 const apiUri = import.meta.env.VITE_REACT_API_URI
 
 const Header = () => {
@@ -42,10 +44,10 @@ const Header = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <NavLink to="/" className="inline-flex items-center gap-2 transition-opacity hover:opacity-80"> 
-      <div className="pt-8 px-6 w-16 mb-10">
-        <h3 className="font-rock-salt text-2xl text-foreground">Zygo</h3>
-      </div>       
-         </NavLink>
+            <div className="pt-8 px-6 w-16 mb-10">
+              <h3 className="font-rock-salt text-2xl text-foreground">Zygo</h3>
+            </div>       
+          </NavLink>
           
           <nav className="hidden md:flex items-center space-x-8">
             <NavLink 
@@ -78,9 +80,9 @@ const Header = () => {
                     <Moon className="h-5 w-5 text-gray-800 dark:text-gray-200" />
                   )}
                 </button>
-                
               </div>
             )}
+            {user && <NotificationBell />}
             {!user ? (
               <LoginSignupDialog />
             ) : (

@@ -20,7 +20,12 @@ const useFetch = (endpoint, includeCredentials = false) => {
         setData(response.data)
       })
       .catch((err) => {
-        setError(err.response ? err.response.data : err.message)
+        // Extract error message from the response
+        const errorMessage = err.response?.data?.message || 
+                           err.response?.data?.error || 
+                           err.message || 
+                           "An error occurred";
+        setError(errorMessage);
       })
       .finally(() => {
         setLoading(false)
@@ -37,7 +42,12 @@ const useFetch = (endpoint, includeCredentials = false) => {
         setData(response.data)
       })
       .catch((err) => {
-        setError(err.response ? err.response.data : err.message)
+        // Extract error message from the response
+        const errorMessage = err.response?.data?.message || 
+                           err.response?.data?.error || 
+                           err.message || 
+                           "An error occurred";
+        setError(errorMessage);
       })
       .finally(() => {
         setLoading(false)
