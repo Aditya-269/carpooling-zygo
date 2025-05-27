@@ -12,7 +12,7 @@ import { AuthContext } from "@/context/AuthContext"
 import useFetch from "@/hooks/useFetch"
 import axios from "axios"
 import { Loader2, Pencil, Star, Trash } from "lucide-react"
-import { Fragment, useContext, useState } from "react"
+import { Fragment, useContext, useState, useEffect } from "react"
 import { Controller, useForm } from "react-hook-form"
 import { Navigate } from "react-router-dom"
 import { toast } from "sonner"
@@ -26,6 +26,18 @@ const Profile = () => {
   const [editMode, setEditMode] = useState(false)
   const [uploading, setUploading] = useState(false)
   const {loading, data, refetch} = useFetch(`users/${user.user._id}`, true)
+  const [carbonSavings, setCarbonSavings] = useState(null);
+  const [carbonLoading, setCarbonLoading] = useState(true);
+
+  useEffect(() => {
+    if (user?.user?._id) {
+      setCarbonLoading(true);
+      axios.get(`${apiUri}/users/${user.user._id}/carbon-savings`, { withCredentials: true })
+        .then(res => setCarbonSavings(res.data))
+        .catch(err => console.error("Error fetching carbon savings:", err))
+        .finally(() => setCarbonLoading(false));
+    }
+  }, [user]);
 
   const handleImageUpload = async (event) => {
     try {
@@ -204,6 +216,9 @@ const Profile = () => {
               <div className="flex justify-center items-start flex-col space-y-2">
                 <p className="text-base font-semibold leading-4 text-left">{data?.name}</p>
                 <div className="flex items-center text-sm gap-1 text-muted-foreground"><Star fill="yellow" size={20} className="text-transparent" /> {data?.stars} - {data?.ratings.length} ratings</div>
+                {data?.trustScore !== undefined && (
+                    <div className="text-sm text-muted-foreground">Trust Score: <span className="font-medium text-blue-600">{data.trustScore.toFixed(0)}</span></div>
+                )}
               </div>
               </>
             }
@@ -245,6 +260,21 @@ const Profile = () => {
               <Button variant='outline' onClick={(e) => {e.preventDefault(); reset(); setEditMode(false)}}>Cancel</Button>
             </form>
           }
+
+          {/* Carbon Savings Section */}
+          <div className="mt-8 space-y-4">
+            <h3 className="text-xl font-semibold">Carbon Footprint Savings</h3>
+            {carbonLoading ? (
+                <Skeleton className="h-12 w-full" />
+            ) : carbonSavings ? (
+                <div className="space-y-2">
+                    <p className="text-muted-foreground">Weekly: <span className="font-medium text-green-600">{(carbonSavings.weekly / 1000).toFixed(2)} kg CO₂</span></p>
+                    <p className="text-muted-foreground">Monthly: <span className="font-medium text-green-600">{(carbonSavings.monthly / 1000).toFixed(2)} kg CO₂</span></p>
+                </div>
+            ) : (
+                <p className="text-muted-foreground">Savings data not available.</p>
+            )}
+          </div>
         </div>
       
         <div className="flex flex-col justify-start items-start gap-2 w-full sm:w-2/3">

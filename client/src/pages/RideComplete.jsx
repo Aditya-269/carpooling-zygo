@@ -86,6 +86,13 @@ const RideComplete = () => {
               <p className="text-3xl font-bold">₹{rideData?.price}</p>
             </div>
 
+            {rideData?.carbonSavedRide !== undefined && (
+              <div className="text-center border-t pt-4">
+                <p className="font-medium text-lg mb-2">CO₂ Saved</p>
+                <p className="text-xl font-bold text-green-600">{(rideData.carbonSavedRide / 1000).toFixed(2)} kg</p>
+              </div>
+            )}
+
             <div className="border-t pt-4">
               <p className="text-center font-medium mb-4">Rate your experience</p>
               <div className="flex justify-center space-x-2">
