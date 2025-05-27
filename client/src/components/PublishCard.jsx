@@ -5,12 +5,17 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { zodResolver } from "@hookform/resolvers/zod"
 import axios from "axios";
-import { Minus, Plus } from "lucide-react";
+import { Minus, Plus, CalendarIcon } from "lucide-react";
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { Toaster } from "./ui/sonner";
 import { toast } from "sonner";
 import LocationAutocomplete from "./LocationAutocomplete";
+import { Calendar } from "./ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { cn } from "@/lib/utils";
+import { format, isSameDay, isAfter } from "date-fns";
+
 const apiUri = import.meta.env.VITE_REACT_API_URI
 
 const formSchema = z.object({
@@ -29,7 +34,13 @@ const formSchema = z.object({
   startTime: z.date().min(new Date()),
   endTime: z.date().min(new Date()),
   tags: z.array(z.string())
-})
+}).refine((data) => {
+  // Ensure endTime is after startTime and on the same day
+  return isSameDay(data.startTime, data.endTime) && isAfter(data.endTime, data.startTime);
+}, {
+  message: "Arrival time must be after departure time and on the same day",
+  path: ["endTime"]
+});
 
 const PublishCard = () => {
   const form = useForm({
@@ -62,6 +73,17 @@ const PublishCard = () => {
       // Validate dates
       if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
         toast.error("Invalid date format");
+        return;
+      }
+
+      // Additional validation for same day and time order
+      if (!isSameDay(startTime, endTime)) {
+        toast.error("Departure and arrival must be on the same day");
+        return;
+      }
+
+      if (!isAfter(endTime, startTime)) {
+        toast.error("Arrival time must be after departure time");
         return;
       }
 
@@ -216,12 +238,59 @@ const PublishCard = () => {
             render={({ field }) => (
               <FormItem className="flex flex-col space-y-1.5">
                 <FormLabel>Departure Time</FormLabel>
-                <FormControl>
-                  <Input type="datetime-local" placeholder="Departure time" {...field} 
-                    value={field.value ? field.value.toISOString().slice(0, 16) : ''}
-                    onChange={(e) => field.onChange(new Date(e.target.value))}
-                  />
-                </FormControl>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full pl-3 text-left font-normal",
+                          !field.value && "text-muted-foreground"
+                        )}
+                      >
+                        {field.value ? (
+                          format(field.value, "PPP HH:mm")
+                        ) : (
+                          <span>Pick a date and time</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={field.value}
+                      onSelect={(date) => {
+                        if (date) {
+                          // Preserve the time when changing the date
+                          const newDate = new Date(date);
+                          if (field.value) {
+                            newDate.setHours(field.value.getHours());
+                            newDate.setMinutes(field.value.getMinutes());
+                          }
+                          field.onChange(newDate);
+                        }
+                      }}
+                      disabled={(date) =>
+                        date < new Date(new Date().setHours(0, 0, 0, 0))
+                      }
+                      initialFocus
+                    />
+                    <div className="p-3 border-t">
+                      <Input
+                        type="time"
+                        value={field.value ? format(field.value, "HH:mm") : ""}
+                        onChange={(e) => {
+                          const [hours, minutes] = e.target.value.split(":");
+                          const newDate = new Date(field.value);
+                          newDate.setHours(parseInt(hours), parseInt(minutes));
+                          field.onChange(newDate);
+                        }}
+                      />
+                    </div>
+                  </PopoverContent>
+                </Popover>
                 <FormMessage />
               </FormItem>
             )}
@@ -232,12 +301,67 @@ const PublishCard = () => {
             render={({ field }) => (
               <FormItem className="flex flex-col space-y-1.5">
                 <FormLabel>Arrival Time</FormLabel>
-                <FormControl>
-                  <Input type="datetime-local" placeholder="Arrival time" {...field} 
-                    value={field.value ? field.value.toISOString().slice(0, 16) : ''}
-                    onChange={(e) => field.onChange(new Date(e.target.value))}
-                  />
-                </FormControl>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full pl-3 text-left font-normal",
+                          !field.value && "text-muted-foreground"
+                        )}
+                      >
+                        {field.value ? (
+                          format(field.value, "PPP HH:mm")
+                        ) : (
+                          <span>Pick a date and time</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={field.value}
+                      onSelect={(date) => {
+                        if (date) {
+                          // Preserve the time when changing the date
+                          const newDate = new Date(date);
+                          if (field.value) {
+                            newDate.setHours(field.value.getHours());
+                            newDate.setMinutes(field.value.getMinutes());
+                          }
+                          field.onChange(newDate);
+                        }
+                      }}
+                      disabled={(date) => {
+                        const startTime = form.getValues("startTime");
+                        return date < startTime || !isSameDay(date, startTime);
+                      }}
+                      initialFocus
+                    />
+                    <div className="p-3 border-t">
+                      <Input
+                        type="time"
+                        value={field.value ? format(field.value, "HH:mm") : ""}
+                        onChange={(e) => {
+                          const [hours, minutes] = e.target.value.split(":");
+                          const newDate = new Date(field.value);
+                          newDate.setHours(parseInt(hours), parseInt(minutes));
+                          
+                          // Validate that the new time is after start time
+                          const startTime = form.getValues("startTime");
+                          if (isSameDay(newDate, startTime) && isAfter(newDate, startTime)) {
+                            field.onChange(newDate);
+                          } else {
+                            toast.error("Arrival time must be after departure time");
+                          }
+                        }}
+                      />
+                    </div>
+                  </PopoverContent>
+                </Popover>
                 <FormMessage />
               </FormItem>
             )}
