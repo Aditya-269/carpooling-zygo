@@ -12,6 +12,7 @@ import axios from "axios";
 const OPTIMIZER_API_URL = "http://localhost:5000/optimize-route"; // Replace with your actual optimization backend URL
 
 const RideTracking = () => {
+  const apiUri = import.meta.env.VITE_REACT_API_URI; // Moved inside component
   const { rideId } = useParams();
   const { data: rideData, loading: rideLoading, error: rideError } = useFetch(`rides/${rideId}`);
   const [optimizedRoute, setOptimizedRoute] = useState([]);
@@ -196,9 +197,21 @@ const RideTracking = () => {
           </div>
         </Card>
 
-        <Link to={`/ride/${rideId}/complete`}>
-          <Button className="w-full">Payment</Button>
-        </Link>
+        <Button
+          className="w-full"
+          onClick={async () => {
+            try {
+              await axios.post(`${apiUri}/rides/${rideId}/complete`, {}, { withCredentials: true });
+              // Optionally navigate or show a success message after completion
+              console.log('Ride completion triggered successfully!');
+               // Redirect to RideComplete page after successful completion
+               window.location.href = `/ride/${rideId}/complete`;
+            } catch (error) {
+              console.error('Error triggering ride completion:', error);
+              // Handle errors (e.g., show a toast notification)
+            }
+          }}
+        >Payment</Button>
       </div>
     </main>
   );
