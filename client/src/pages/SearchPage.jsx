@@ -6,12 +6,72 @@ import { Skeleton } from '@/components/ui/skeleton';
 import useFetch from '@/hooks/useFetch';
 import { MoveRight, SlidersHorizontal } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
+import { useState, useMemo, useEffect } from 'react';
 
 const SearchPage = () => {
   const { search } = useLocation();
   const { from, to, date, seat } = Object.fromEntries(new URLSearchParams(search));
+  const [sortBy, setSortBy] = useState('');
+  const [departureTimes, setDepartureTimes] = useState([]);
 
   const { loading, data } = useFetch(`rides/find?from=${from}&to=${to}&seat=${seat}&date=${date}`);
+
+  // Debug logging for departure times
+  useEffect(() => {
+    console.log('Selected departure times:', departureTimes);
+  }, [departureTimes]);
+
+  const filteredAndSortedRides = useMemo(() => {
+    if (!data?.rides) return [];
+
+    let filteredRides = [...data.rides];
+    console.log('Total rides before filtering:', filteredRides.length);
+
+    // Apply departure time filters
+    if (departureTimes.length > 0) {
+      filteredRides = filteredRides.filter(ride => {
+        const departureHour = new Date(ride.startTime).getHours();
+        console.log(`Ride ${ride._id} departure hour:`, departureHour);
+        
+        const isInSelectedTime = departureTimes.some(time => {
+          let isInTime = false;
+          switch (time) {
+            case 'before_6':
+              isInTime = departureHour < 6;
+              break;
+            case '6_to_12':
+              isInTime = departureHour >= 6 && departureHour < 12;
+              break;
+            case '12_to_18':
+              isInTime = departureHour >= 12 && departureHour < 18;
+              break;
+            default:
+              isInTime = true;
+          }
+          console.log(`Time slot ${time} check:`, isInTime);
+          return isInTime;
+        });
+        
+        console.log(`Ride ${ride._id} included in filter:`, isInSelectedTime);
+        return isInSelectedTime;
+      });
+      console.log('Rides after departure time filtering:', filteredRides.length);
+    }
+
+    // Apply sorting
+    switch (sortBy) {
+      case 'price':
+        filteredRides.sort((a, b) => a.price - b.price);
+        break;
+      case 'departure':
+        filteredRides.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+        break;
+      default:
+        break;
+    }
+
+    return filteredRides;
+  }, [data?.rides, sortBy, departureTimes]);
 
   return (
     <main>
@@ -22,14 +82,20 @@ const SearchPage = () => {
             <SlidersHorizontal />
           </DialogTrigger>
           <DialogContent>
-            <Sidebar />
+            <Sidebar 
+              onSortChange={setSortBy}
+              onDepartureTimeChange={setDepartureTimes}
+            />
           </DialogContent>
         </Dialog>
       </div>
       <div className="container p-0 max-w-screen-xl grid md:grid-cols-5">
         <div className="hidden md:block">
           <div className="sticky top-16">
-            <Sidebar />
+            <Sidebar 
+              onSortChange={setSortBy}
+              onDepartureTimeChange={setDepartureTimes}
+            />
           </div>
         </div>
         <div className="col-span-3 py-6 md:col-span-4 lg:border-l">
@@ -45,11 +111,11 @@ const SearchPage = () => {
                 <h3>
                   {from} <MoveRight className="inline-block" /> {to}
                 </h3>
-                <h3>{data?.rides.length} rides available</h3>
-                {data.rides.length === 0 ? (
+                <h3>{filteredAndSortedRides.length} rides available</h3>
+                {filteredAndSortedRides.length === 0 ? (
                   <h3 className='text-xl font-semibold'>No rides available based on your search criteria.</h3>
                 ) : (
-                  data.rides.map((ride) => (
+                  filteredAndSortedRides.map((ride) => (
                     <Link key={ride._id} to={`/ride/${ride._id}`}>
                       <RideCard details={ride} />
                     </Link>
