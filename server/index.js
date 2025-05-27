@@ -3,6 +3,7 @@ import dotenv from "dotenv"
 import mongoose from "mongoose"
 import cors from "cors"
 import cookieParser from "cookie-parser"
+import { createServer } from "http"
 import chatRoutes from "./routes/chat.routes.js"
 import http from "http"
 import { Server as SocketIOServer } from "socket.io"
@@ -10,6 +11,7 @@ import { Server as SocketIOServer } from "socket.io"
 import authRoute from "./routes/auth.routes.js"
 import userRoute from "./routes/user.routes.js"
 import rideRoute from "./routes/ride.routes.js"
+import notificationRoute from "./routes/notification.routes.js"
 import paymentRoute from "./routes/payment.routes.js"
 
 const app = express()
@@ -33,6 +35,18 @@ const connectDB = (url) => {
     .catch((error) => console.log(error));
 };
 
+// Create HTTP server and Socket.IO server
+const httpServer = createServer(app);
+const io = new SocketIOServer(httpServer, {
+  cors: {
+    origin: process.env.ORIGIN,
+    credentials: true,
+  },
+});
+
+// Attach io to app for access in controllers
+app.set("io", io);
+
 //middlewares
 app.use(cors({
     origin: process.env.ORIGIN,
@@ -48,8 +62,8 @@ app.use(express.json())
 app.use("/api/users", userRoute);
 app.use("/api/auth", authRoute);
 app.use("/api/rides", rideRoute);
+app.use("/api/notifications", notificationRoute);
 app.use("/api/chat", chatRoutes);
-=======
 app.use("/api/payments", paymentRoute);
 
 io.on("connection", (socket) => {
@@ -71,7 +85,28 @@ app.use((err, req, res, next)=>{
   })
 })
 
+
+app.listen = undefined; // Remove default listen
+
+httpServer.listen(PORT, () => {
 server.listen(PORT, () => {
   connectDB()
   console.log(`Connected to backend on PORT: ${PORT}`)
 })
+
+// Handle Socket.IO connections
+io.on("connection", (socket) => {
+  console.log("A user connected: " + socket.id);
+
+  // Listen for authentication event to join user-specific room
+  socket.on("authenticate", (userId) => {
+    if (userId) {
+      socket.join(userId.toString());
+      console.log(`Socket ${socket.id} joined room for user ${userId}`);
+    }
+  });
+
+  socket.on("disconnect", () => {
+    console.log("User disconnected: " + socket.id);
+  });
+});

@@ -1,6 +1,8 @@
 import Ride from "../models/Ride.js"
 import User from "../models/User.js";
 import Rating from "../models/Rating.js";
+import { createNotification } from "./notification.js";
+import { format } from "date-fns";
 import { calculateAndUpdateTrustScore } from "./user.js"; // Import the function
 
 export const getRide = async (req, res, next) => {
@@ -95,9 +97,9 @@ export const findRides = async (req, res, next) => {
   }
 }
 
-export const joinRide = async (req, res, next) =>{
-  try{
-    const ride = await Ride.findById(req.params.id);
+export const joinRide = async (req, res, next) => {
+  try {
+    const ride = await Ride.findById(req.params.id).populate('creator', 'name');
 
     if (ride.creator.toString() === req.user.id) {
       return res.status(400).json('You cannot join your own ride!');
@@ -112,14 +114,31 @@ export const joinRide = async (req, res, next) =>{
     await Ride.updateOne(
       { _id: ride._id },
       { $push: { passengers: req.user.id }, $inc: { availableSeats: -1 } }
-    ),
+    );
+    
     await User.updateOne(
       { _id: req.user.id },
       { $push: { ridesJoined: ride._id } }
-    ),
+    );
+
+    // Fetch the user's name from the database
+    const user = await User.findById(req.user.id);
+    const userName = user ? user.name : 'Someone';
+
+    // Create notification for the ride creator
+    const message = `${userName} has booked your ride from ${ride.origin.place} to ${ride.destination.place} on ${format(new Date(ride.startTime), 'PPp')}`;
+    
+    await createNotification(
+      ride.creator._id,
+      req.user.id,
+      ride._id,
+      message,
+      'booking',
+      req
+    );
 
     res.status(200).json({ message: 'Successfully joined the ride!' });
-  }catch(err){
+  } catch (err) {
     next(err);
   }
 }
@@ -238,7 +257,7 @@ export const completeRideAndCalculateCarbon = async (rideId) => {
              const dLat = (lat2 - lat1) * Math.PI / 180;
              const dLng = (lng2 - lng1) * Math.PI / 180;
              const a = 
-               Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+               Math.sin(dLat / 2) * Math.sin(dhttps://github.com/Aditya-269/jj/pull/4/conflict?name=server%252Findex.js&ancestor_oid=a38bd3c549bacc29487633581c02abb5bc1dc226&base_oid=ccabb5bdf0165ee11f40ef21397760c076063c70&head_oid=ab8833d134f29253c97276e62eb3669ff0ad4dd7Lat / 2) +
                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
                Math.sin(dLng / 2) * Math.sin(dLng / 2);
              const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
