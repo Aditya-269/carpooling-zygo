@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { zodResolver } from "@hookform/resolvers/zod"
 import axios from "axios";
 import { Minus, Plus } from "lucide-react";
@@ -26,7 +27,8 @@ const formSchema = z.object({
   seat: z.number().min(1).max(10),
   price: z.number().nonnegative(),
   startTime: z.date().min(new Date()),
-  endTime: z.date().min(new Date())
+  endTime: z.date().min(new Date()),
+  tags: z.array(z.string())
 })
 
 const PublishCard = () => {
@@ -41,6 +43,7 @@ const PublishCard = () => {
       price: 0,
       startTime: new Date(),
       endTime: new Date(),
+      tags: []
     },
   });
 
@@ -74,7 +77,8 @@ const PublishCard = () => {
         },
         startTime: startTime.toISOString(),
         endTime: endTime.toISOString(),
-        price: Number(data.price)
+        price: Number(data.price),
+        tags: data.tags
       };
 
       console.log('Sending ride data:', JSON.stringify(body, null, 2)); // Debug log
@@ -104,6 +108,8 @@ const PublishCard = () => {
       toast.error(errorMessage);
     }
   };
+
+  const availableTags = ['AC', 'Music', 'Pet Friendly', 'No Smoking', 'Ladies Only', 'Express Route'];
 
   return (
     <Card className="w-[350px]">
@@ -236,7 +242,37 @@ const PublishCard = () => {
               </FormItem>
             )}
           />
-          <Button type="submit">Publish</Button>
+          <div className="space-y-4">
+            <div className="border p-4 rounded-md">
+              <h3 className="font-medium mb-2">Ride Tags</h3>
+              <div className="grid grid-cols-2 gap-3">
+                {availableTags.map((tag) => (
+                  <FormField
+                    key={tag}
+                    control={form.control}
+                    name="tags"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value?.includes(tag)}
+                            onCheckedChange={(checked) => {
+                              const newTags = checked
+                                ? [...(field.value || []), tag]
+                                : (field.value || []).filter((t) => t !== tag);
+                              field.onChange(newTags);
+                            }}
+                          />
+                        </FormControl>
+                        <FormLabel className="font-normal">{tag}</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                ))}
+              </div>
+            </div>
+            <Button type="submit">Publish Ride</Button>
+          </div>
         </form>
       </Form>
       </CardContent>

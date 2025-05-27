@@ -11,19 +11,117 @@ import { Textarea } from "@/components/ui/textarea"
 import { AuthContext } from "@/context/AuthContext"
 import useFetch from "@/hooks/useFetch"
 import axios from "axios"
-import { Pencil, Star, Trash } from "lucide-react"
-import { Fragment, useContext, useState } from "react"
+import { Loader2, Pencil, Star, Trash } from "lucide-react"
+import { Fragment, useContext, useState, useEffect } from "react"
 import { Controller, useForm } from "react-hook-form"
 import { Navigate } from "react-router-dom"
 import { toast } from "sonner"
 const apiUri = import.meta.env.VITE_REACT_API_URI
-
 const Profile = () => {
   const {user} = useContext(AuthContext)
+  const cloudinaryPreset = import.meta.env.VITE_CLOUDINARY_PRESET
+  const cloudinaryCloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
 
   const [rideDeleteMode, setRideDeleteMode] = useState(false)
   const [editMode, setEditMode] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const {loading, data, refetch} = useFetch(`users/${user.user._id}`, true)
+  const [carbonSavings, setCarbonSavings] = useState(null);
+  const [carbonLoading, setCarbonLoading] = useState(true);
+
+  useEffect(() => {
+    if (user?.user?._id) {
+      setCarbonLoading(true);
+      axios.get(`${apiUri}/users/${user.user._id}/carbon-savings`, { withCredentials: true })
+        .then(res => setCarbonSavings(res.data))
+        .catch(err => console.error("Error fetching carbon savings:", err))
+        .finally(() => setCarbonLoading(false));
+    }
+  }, [user]);
+
+  const handleImageUpload = async (event) => {
+    try {
+      const file = event.target.files[0];
+      
+      if (!file) {
+        toast.error('Please select an image file');
+        return;
+      }
+
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error('Please select a valid image file (JPEG, PNG, or GIF)');
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      const maxSize = 5 * 1024 * 1024;
+      if (file.size > maxSize) {
+        toast.error('Image size should be less than 5MB');
+        return;
+      }
+
+      if (!cloudinaryPreset || !cloudinaryCloudName) {
+        toast.error('Image upload configuration is missing. Please check your environment variables.');
+        return;
+      }
+
+      setUploading(true);
+      toast.info('Starting upload...');
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', cloudinaryPreset);
+
+      const uploadResponse = await axios.post(
+        `https://api.cloudinary.com/v1_1/${cloudinaryCloudName}/image/upload`,
+        formData,
+        {
+          timeout: 30000,
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
+
+      if (!uploadResponse.data?.secure_url) {
+        throw new Error('No secure URL in response');
+      }
+
+      toast.info('Updating profile...');
+      
+      await axios.patch(
+        `${apiUri}/users/${user.user._id}`,
+        { profilePicture: uploadResponse.data.secure_url },
+        { 
+          withCredentials: true,
+          timeout: 10000
+        }
+      );
+
+      refetch();
+      toast.success('Profile picture updated successfully');
+    } catch (error) {
+      if (error.code === 'ECONNABORTED') {
+        toast.error('Upload timed out. Please try again');
+      } else if (error.response?.status === 413) {
+        toast.error('File size too large for upload');
+      } else if (error.response?.status === 415) {
+        toast.error('Unsupported file type');
+      } else if (!navigator.onLine) {
+        toast.error('No internet connection');
+      } else if (error.response?.data?.error?.message) {
+        toast.error(`Upload failed: ${error.response.data.error.message}`);
+      } else {
+        toast.error('Failed to upload image. Please try again.');
+      }
+    } finally {
+      setUploading(false);
+      // Reset the file input
+      event.target.value = '';
+    }
+  };
 
   const { control, handleSubmit, reset } = useForm({
     defaultValues: {
@@ -82,10 +180,34 @@ const Profile = () => {
                   <Pencil size={20} className="absolute bg-background/95 backdrop-blur-sm supports-[backdrop-filter]:bg-background/60 p-1 cursor-pointer rounded-full bottom-0 -left-5" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                  <DropdownMenuItem>
-                    <Label htmlFor='avatar' className='font-normal'>Upload image</Label>
-                    <Input type="file" id='avatar' className="hidden" />
-                  </DropdownMenuItem>
+                  <div className="p-2">
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start"
+                      onClick={() => document.getElementById('avatar').click()}
+                      disabled={uploading}
+                    >
+                      {uploading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Pencil className="mr-2 h-4 w-4" />
+                          Upload image
+                        </>
+                      )}
+                    </Button>
+                    <Input 
+                      type="file" 
+                      id='avatar' 
+                      className="hidden" 
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      disabled={uploading}
+                    />
+                  </div>
                   <DropdownMenuItem>
                     <p>Remove profile</p>
                   </DropdownMenuItem>
@@ -94,6 +216,9 @@ const Profile = () => {
               <div className="flex justify-center items-start flex-col space-y-2">
                 <p className="text-base font-semibold leading-4 text-left">{data?.name}</p>
                 <div className="flex items-center text-sm gap-1 text-muted-foreground"><Star fill="yellow" size={20} className="text-transparent" /> {data?.stars} - {data?.ratings.length} ratings</div>
+                {data?.trustScore !== undefined && (
+                    <div className="text-sm text-muted-foreground">Trust Score: <span className="font-medium text-blue-600">{data.trustScore.toFixed(0)}</span></div>
+                )}
               </div>
               </>
             }
@@ -135,6 +260,21 @@ const Profile = () => {
               <Button variant='outline' onClick={(e) => {e.preventDefault(); reset(); setEditMode(false)}}>Cancel</Button>
             </form>
           }
+
+          {/* Carbon Savings Section */}
+          <div className="mt-8 space-y-4">
+            <h3 className="text-xl font-semibold">Carbon Footprint Savings</h3>
+            {carbonLoading ? (
+                <Skeleton className="h-12 w-full" />
+            ) : carbonSavings ? (
+                <div className="space-y-2">
+                    <p className="text-muted-foreground">Weekly: <span className="font-medium text-green-600">{(carbonSavings.weekly / 1000).toFixed(2)} kg CO₂</span></p>
+                    <p className="text-muted-foreground">Monthly: <span className="font-medium text-green-600">{(carbonSavings.monthly / 1000).toFixed(2)} kg CO₂</span></p>
+                </div>
+            ) : (
+                <p className="text-muted-foreground">Savings data not available.</p>
+            )}
+          </div>
         </div>
       
         <div className="flex flex-col justify-start items-start gap-2 w-full sm:w-2/3">

@@ -15,7 +15,6 @@ const rideSchema = new mongoose.Schema({
   availableSeats: {
     type: Number,
     required: true,
-    min: 1,
   },
   origin: {
     place: {
@@ -51,6 +50,10 @@ const rideSchema = new mongoose.Schema({
   price: {
     type: Number, 
   },
+  tags: [{
+    type: String,
+    enum: ['AC', 'Music', 'Pet Friendly', 'No Smoking', 'Ladies Only', 'Express Route']
+  }],
   vehicleDetails: {
     vehicleNumber: {
       type: String,
