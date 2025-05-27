@@ -212,6 +212,9 @@ const RideTracking = () => {
             }
           }}
         >Payment</Button>
+        <Link to={`/ride/${rideId}/payment`}>
+          <Button className="w-full">Payment</Button>
+        </Link>
       </div>
     </main>
   );
