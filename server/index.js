@@ -48,11 +48,8 @@ app.use(express.json())
 app.use("/api/users", userRoute);
 app.use("/api/auth", authRoute);
 app.use("/api/rides", rideRoute);
-<<<<<<< HEAD
 app.use("/api/chat", chatRoutes);
-=======
 app.use("/api/payments", paymentRoute);
->>>>>>> 776dedff2f102a9333111c6bd5840627d9f270f5
 
 io.on("connection", (socket) => {
   socket.on("join", ({ rideId }) => {

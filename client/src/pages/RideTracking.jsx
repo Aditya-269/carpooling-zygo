@@ -197,27 +197,12 @@ const RideTracking = () => {
           </div>
         </Card>
 
-<<<<<<< HEAD
         <Button
           className="w-full"
-          onClick={async () => {
-            try {
-              await axios.post(`${apiUri}/rides/${rideId}/complete`, {}, { withCredentials: true });
-              // Optionally navigate or show a success message after completion
-              console.log('Ride completion triggered successfully!');
-               // Redirect to RideComplete page after successful completion
-               window.location.href = `/ride/${rideId}/complete`;
-            } catch (error) {
-              console.error('Error triggering ride completion:', error);
-              // Handle errors (e.g., show a toast notification)
-            }
+          onClick={() => {
+            window.location.href = `/ride/${rideId}/payment`;
           }}
         >Payment</Button>
-=======
-        <Link to={`/ride/${rideId}/payment`}>
-          <Button className="w-full">Payment</Button>
-        </Link>
->>>>>>> 776dedff2f102a9333111c6bd5840627d9f270f5
       </div>
     </main>
   );

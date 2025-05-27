@@ -17,7 +17,7 @@ const Payment = () => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   const initialOptions = {
-    clientId: process.env.REACT_APP_PAYPAL_CLIENT_ID || "test",
+    clientId: import.meta.env.VITE_PAYPAL_CLIENT_ID || "test",
     currency: "USD",
     intent: "capture",
     components: "buttons",
@@ -31,7 +31,9 @@ const Payment = () => {
 
   const handlePaymentSuccess = async (details) => {
     try {
-      console.log('Payment successful, saving data...');
+      setIsProcessing(true);
+      console.log('Payment successful, details:', details);
+      
       // Save payment data to backend
       const paymentData = {
         rideId,
@@ -43,6 +45,7 @@ const Payment = () => {
         paymentDetails: details
       };
 
+      console.log('Sending payment data to backend:', paymentData);
       const response = await axios.post(
         `${apiUri}/payments`,
         paymentData,
@@ -53,7 +56,8 @@ const Payment = () => {
 
       // Update ride status to completed
       try {
-        await axios.put(
+        console.log('Attempting to complete ride:', rideId);
+        await axios.post(
           `${apiUri}/rides/${rideId}/complete`,
           {},
           { withCredentials: true }
@@ -63,19 +67,28 @@ const Payment = () => {
         // Use React Router's navigate with replace to prevent going back
         navigate(`/ride/${rideId}/complete`, { replace: true });
       } catch (error) {
-        console.error('Error updating ride status:', error);
+        console.error('Error updating ride status:', error.response?.data || error);
+        toast.error(error.response?.data?.message || 'Failed to update ride status');
         // Even if ride status update fails, we should still navigate to complete page
         navigate(`/ride/${rideId}/complete`, { replace: true });
       }
     } catch (error) {
-      console.error('Error processing payment:', error);
-      toast.error('Failed to process payment');
+      console.error('Error processing payment:', error.response?.data || error);
+      toast.error(error.response?.data?.message || 'Failed to process payment');
+      setIsProcessing(false);
       // Navigate back to tracking page on error
       navigate(`/ride/${rideId}/tracking`, { replace: true });
     }
   };
 
+  // Add logging for PayPal initialization
+  useEffect(() => {
+    console.log('PayPal client ID:', import.meta.env.VITE_PAYPAL_CLIENT_ID);
+    console.log('Ride data:', rideData);
+  }, [rideData]);
+
   if (error) {
+    console.error('Error loading ride data:', error);
     return (
       <main className="container max-w-md mx-auto py-8 px-4">
         <div className="text-center">
@@ -88,7 +101,8 @@ const Payment = () => {
     );
   }
 
-  if (!process.env.REACT_APP_PAYPAL_CLIENT_ID) {
+  if (!import.meta.env.VITE_PAYPAL_CLIENT_ID) {
+    console.error('PayPal client ID not configured');
     return (
       <main className="container max-w-md mx-auto py-8 px-4">
         <div className="text-center">

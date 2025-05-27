@@ -15,6 +15,7 @@ export const createPayment = async (req, res, next) => {
     });
     
     if (!rideId || !paymentId || !amount) {
+      console.error('Missing required fields:', { rideId, paymentId, amount });
       return res.status(400).json({ 
         success: false,
         message: "Missing required fields: rideId, paymentId, and amount are required" 
