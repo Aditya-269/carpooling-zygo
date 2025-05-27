@@ -1,8 +1,6 @@
 import Ride from "../models/Ride.js"
 import User from "../models/User.js";
 import Rating from "../models/Rating.js";
-import { createNotification } from "./notification.js";
-import { format } from "date-fns";
 import { calculateAndUpdateTrustScore } from "./user.js"; // Import the function
 
 export const getRide = async (req, res, next) => {
@@ -48,7 +46,6 @@ export const getRide = async (req, res, next) => {
     rideObj.carbonSavedRide = carbonSavedPerPassengerRide; // Add this to the ride object sent to frontend
     rideObj.totalCarbonSavedRide = totalCarbonSavedRide; // Optional: total saved by all
 
-
     res.status(200).json(rideObj); 
   }catch(err){
     next(err);
@@ -68,9 +65,20 @@ export const findRides = async (req, res, next) => {
   try {
     const { from, to, seat, date, tags } = req.query;
     
-    if (!from || !to || !seat || !date) {
-        return res.status(400).json({ message: 'Please provide all the details' });
+    // Enhanced validation for query parameters
+    if (!from || from === 'undefined') {
+      return res.status(400).json({ success: false, message: 'Origin location is required' });
     }
+    if (!to || to === 'undefined') {
+      return res.status(400).json({ success: false, message: 'Destination location is required' });
+    }
+    if (!seat || seat === 'undefined' || isNaN(seat)) {
+      return res.status(400).json({ success: false, message: 'Valid number of seats is required' });
+    }
+    if (!date || date === 'undefined' || isNaN(new Date(date).getTime())) {
+      return res.status(400).json({ success: false, message: 'Valid date is required' });
+    }
+
     const searchDate = new Date(date)
     searchDate.setHours(0, 0, 0, 0); // Set to midnight of the specified date
 
@@ -78,7 +86,7 @@ export const findRides = async (req, res, next) => {
     const query = {
         'origin.place': new RegExp(from, 'i'),
         'destination.place': new RegExp(to, 'i'),
-        'availableSeats': { $gte: seat},
+        'availableSeats': { $gte: parseInt(seat) },
         'startTime': { $gte: searchDate.toISOString(), $lt: new Date(searchDate.getTime() + 24 * 60 * 60 * 1000).toISOString() }
     };
 
@@ -93,13 +101,14 @@ export const findRides = async (req, res, next) => {
         .lean(); 
     res.status(200).json({ success: true, rides });
   } catch (err) {
-    next(err);
+    console.error('Error in findRides:', err);
+    res.status(500).json({ success: false, message: 'Internal server error while searching for rides' });
   }
 }
 
-export const joinRide = async (req, res, next) => {
-  try {
-    const ride = await Ride.findById(req.params.id).populate('creator', 'name');
+export const joinRide = async (req, res, next) =>{
+  try{
+    const ride = await Ride.findById(req.params.id);
 
     if (ride.creator.toString() === req.user.id) {
       return res.status(400).json('You cannot join your own ride!');
@@ -119,23 +128,7 @@ export const joinRide = async (req, res, next) => {
     await User.updateOne(
       { _id: req.user.id },
       { $push: { ridesJoined: ride._id } }
-    );
-
-    // Fetch the user's name from the database
-    const user = await User.findById(req.user.id);
-    const userName = user ? user.name : 'Someone';
-
-    // Create notification for the ride creator
-    const message = `${userName} has booked your ride from ${ride.origin.place} to ${ride.destination.place} on ${format(new Date(ride.startTime), 'PPp')}`;
-    
-    await createNotification(
-      ride.creator._id,
-      req.user.id,
-      ride._id,
-      message,
-      'booking',
-      req
-    );
+    ),
 
     res.status(200).json({ message: 'Successfully joined the ride!' });
   } catch (err) {
