@@ -1,5 +1,7 @@
-import express from "express"
 import dotenv from "dotenv"
+dotenv.config()
+
+import express from "express"
 import mongoose from "mongoose"
 import cors from "cors"
 import cookieParser from "cookie-parser"
@@ -10,8 +12,6 @@ import rideRoute from "./routes/ride.routes.js"
 
 const app = express()
 const PORT = 8080;
-
-dotenv.config()
 
 const connectDB = (url) => {
   mongoose.set("strictQuery", true);

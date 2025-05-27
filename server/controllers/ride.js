@@ -1,6 +1,7 @@
 import Ride from "../models/Ride.js"
 import User from "../models/User.js";
 import Rating from "../models/Rating.js";
+import { sendSMS } from "../config/twilio.js";
 
 export const getRide = async (req, res, next) => {
   try{
@@ -28,29 +29,43 @@ export const findRides = async (req, res, next) => {
   try {
     const { from, to, seat, date } = req.query;
     
-    if (!from || !to || !seat || !date) {
-        return res.status(400).json({ message: 'Please provide all the details' });
+    // Enhanced validation for query parameters
+    if (!from || from === 'undefined') {
+      return res.status(400).json({ success: false, message: 'Origin location is required' });
     }
+    if (!to || to === 'undefined') {
+      return res.status(400).json({ success: false, message: 'Destination location is required' });
+    }
+    if (!seat || seat === 'undefined' || isNaN(seat)) {
+      return res.status(400).json({ success: false, message: 'Valid number of seats is required' });
+    }
+    if (!date || date === 'undefined' || isNaN(new Date(date).getTime())) {
+      return res.status(400).json({ success: false, message: 'Valid date is required' });
+    }
+
     const searchDate = new Date(date)
     searchDate.setHours(0, 0, 0, 0); // Set to midnight of the specified date
 
     const rides = await Ride.find({
         'origin.place': new RegExp(from, 'i'),
         'destination.place': new RegExp(to, 'i'),
-        'availableSeats': { $gte: seat},
-        'startTime': { $gte: searchDate.toISOString(), $lt: new Date(searchDate.getTime() + 24 * 60 * 60 * 1000).toISOString() } // Filter rides up to next midnight
+        'availableSeats': { $gte: parseInt(seat) },
+        'startTime': { $gte: searchDate.toISOString(), $lt: new Date(searchDate.getTime() + 24 * 60 * 60 * 1000).toISOString() }
     })
     .populate('creator', 'name profilePicture stars') 
     .lean(); 
+
     res.status(200).json({ success: true, rides });
   } catch (err) {
-    next(err);
+    console.error('Error in findRides:', err);
+    res.status(500).json({ success: false, message: 'Internal server error while searching for rides' });
   }
 }
 
 export const joinRide = async (req, res, next) =>{
   try{
-    const ride = await Ride.findById(req.params.id);
+    const ride = await Ride.findById(req.params.id).populate('creator', 'name phoneNumber');
+    const user = await User.findById(req.user.id);
 
     if (ride.passengers.includes(req.user.id)) {
       res.status(400).json('You already joined this ride!');
@@ -62,11 +77,23 @@ export const joinRide = async (req, res, next) =>{
     await Ride.updateOne(
       { _id: ride._id },
       { $push: { passengers: req.user.id }, $inc: { availableSeats: -1 } }
-    ),
+    );
+    
     await User.updateOne(
       { _id: req.user.id },
       { $push: { ridesJoined: ride._id } }
-    ),
+    );
+
+    // Send SMS notification
+    const message = `${user.name} has booked the ride. driver is coming`;
+    
+    try {
+      await sendSMS('+91 7735445191', message);
+      console.log('SMS notification sent successfully');
+    } catch (smsError) {
+      console.error('Failed to send SMS notification:', smsError);
+      // Don't fail the ride booking if SMS fails
+    }
 
     res.status(200).json({ message: 'Successfully joined the ride!' });
   }catch(err){
