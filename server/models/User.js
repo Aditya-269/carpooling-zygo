@@ -75,6 +75,16 @@ const userSchema = new mongoose.Schema({
       ref: 'Rating',
     },
   ],
+  carbonSaved: {
+    weekly: { type: Number, default: 0 }, // in grams of CO2
+    monthly: { type: Number, default: 0 }, // in grams of CO2
+  },
+  trustScore: { // New field for trust score
+    type: Number,
+    default: 50, // Starting trust score (e.g., out of 100)
+    min: 0,
+    max: 100,
+  },
 }, {timestamps: true}
 );
 
