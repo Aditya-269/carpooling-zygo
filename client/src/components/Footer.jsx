@@ -86,7 +86,7 @@ const Footer = () => {
 
         <div className="flex flex-col-reverse justify-between pt-8 border-t md:flex-row md:items-center">
           <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} RideShare. All rights reserved.
+            &copy; {new Date().getFullYear()} Zygo. All rights reserved.
           </p>
           <ul className="flex flex-wrap gap-6 mb-4 md:mb-0">
             <li>

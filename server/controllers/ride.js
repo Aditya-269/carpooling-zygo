@@ -233,7 +233,7 @@ export const rateRide = async(req, res, next) => {
 // *** New function to handle ride completion and carbon calculation ***
 export const completeRideAndCalculateCarbon = async (rideId) => {
     try {
-        console.log(`Attempting to complete ride and calculate carbon for rideId: ${rideId}`); // Log entry
+        console.log(`Attempting to complete ride and calculate carbon for rideId: ${rideId}`);
         const ride = await Ride.findById(rideId).populate('passengers').populate('creator');
         if (!ride) {
             console.error(`Ride not found for completion: ${rideId}`);
@@ -246,34 +246,31 @@ export const completeRideAndCalculateCarbon = async (rideId) => {
              return;
         }
 
-        // *** Placeholder for getting actual ride distance ***
-        // Replace this with the actual method to get ride distance after completion
-        // e.g., from tracked route data, or calculated at ride end.
-         let rideDistanceKm = 0;
-         if (ride.origin?.coordinates && ride.destination?.coordinates) {
-             const [lng1, lat1] = ride.origin.coordinates;
-             const [lng2, lat2] = ride.destination.coordinates;
-             const R = 6371; // Radius of Earth in kilometers
-             const dLat = (lat2 - lat1) * Math.PI / 180;
-             const dLng = (lng2 - lng1) * Math.PI / 180;
-             const a = 
-               Math.sin(dLat / 2) * Math.sin(dhttps://github.com/Aditya-269/jj/pull/4/conflict?name=server%252Findex.js&ancestor_oid=a38bd3c549bacc29487633581c02abb5bc1dc226&base_oid=ccabb5bdf0165ee11f40ef21397760c076063c70&head_oid=ab8833d134f29253c97276e62eb3669ff0ad4dd7Lat / 2) +
-               Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-               Math.sin(dLng / 2) * Math.sin(dLng / 2);
-             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-             rideDistanceKm = R * c;
-         }
-        // *** End Placeholder ***
-        console.log(`Calculated ride distance (placeholder): ${rideDistanceKm} km`); // Log distance
+        // Calculate ride distance using Haversine formula
+        let rideDistanceKm = 0;
+        if (ride.origin?.coordinates && ride.destination?.coordinates) {
+            const [lng1, lat1] = ride.origin.coordinates;
+            const [lng2, lat2] = ride.destination.coordinates;
+            const R = 6371; // Radius of Earth in kilometers
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLng = (lng2 - lng1) * Math.PI / 180;
+            const a = 
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLng / 2) * Math.sin(dLng / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            rideDistanceKm = R * c;
+        }
+        console.log(`Calculated ride distance: ${rideDistanceKm} km`);
 
         const CARBON_SAVED_PER_PASSENGER_KM = 50; // grams of CO2
         const carbonSavedPerPassengerRide = rideDistanceKm * CARBON_SAVED_PER_PASSENGER_KM;
-        console.log(`Calculated carbon saved per passenger for this ride: ${carbonSavedPerPassengerRide} grams`); // Log calculated saving
+        console.log(`Calculated carbon saved per passenger for this ride: ${carbonSavedPerPassengerRide} grams`);
 
         // Update carbon savings for each passenger
-        console.log(`Updating carbon savings for ${ride.passengers.length} passengers.`); // Log passenger count
+        console.log(`Updating carbon savings for ${ride.passengers.length} passengers.`);
         for (const passenger of ride.passengers) {
-            console.log(`Attempting to update carbon for passenger: ${passenger._id}`); // Log passenger ID
+            console.log(`Attempting to update carbon for passenger: ${passenger._id}`);
             await User.findByIdAndUpdate(passenger._id, { 
                 $inc: {
                     'carbonSaved.weekly': carbonSavedPerPassengerRide,
@@ -282,20 +279,14 @@ export const completeRideAndCalculateCarbon = async (rideId) => {
             });
         }
 
-        // Optionally update for the driver (if they would have driven solo otherwise)
-        // This logic might depend on your app's specific model
-        // await User.findByIdAndUpdate(ride.creator._id, { $inc: { 'carbonSaved.weekly': carbonSavedPerPassengerRide, 'carbonSaved.monthly': carbonSavedPerPassengerRide } });
-
         // Mark ride as completed
         ride.status = 'completed';
         await ride.save();
 
         console.log(`Ride ${rideId} completed and carbon savings calculated.`);
 
-        // *** Trigger Trust Score Update for participants ***
-        // Update driver's score
+        // Trigger Trust Score Update for participants
         await calculateAndUpdateTrustScore(ride.creator._id);
-        // Update each passenger's score
         for (const passenger of ride.passengers) {
             await calculateAndUpdateTrustScore(passenger._id);
         }
