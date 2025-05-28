@@ -28,7 +28,7 @@ const httpServer = createServer(app);
 const io = new SocketIOServer(httpServer, {
   cors: {
     origin: process.env.NODE_ENV === 'production' 
-      ? process.env.ORIGIN 
+      ? ['https://carpooling-zygo.vercel.app', process.env.ORIGIN]
       : ['http://localhost:5173', 'http://127.0.0.1:5173'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
@@ -51,7 +51,7 @@ app.set("io", io);
 //middlewares
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? process.env.ORIGIN 
+    ? ['https://carpooling-zygo.vercel.app', process.env.ORIGIN]
     : ['http://localhost:5173', 'http://127.0.0.1:5173'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -65,7 +65,7 @@ app.use(cors({
 // Handle preflight requests explicitly
 app.options('*', (req, res) => {
   const allowedOrigins = process.env.NODE_ENV === 'production' 
-    ? [process.env.ORIGIN]
+    ? ['https://carpooling-zygo.vercel.app', process.env.ORIGIN]
     : ['http://localhost:5173', 'http://127.0.0.1:5173'];
   
   const origin = req.headers.origin;
@@ -84,7 +84,7 @@ app.options('*', (req, res) => {
 // Add CORS headers to all responses
 app.use((req, res, next) => {
   const allowedOrigins = process.env.NODE_ENV === 'production' 
-    ? [process.env.ORIGIN]
+    ? ['https://carpooling-zygo.vercel.app', process.env.ORIGIN]
     : ['http://localhost:5173', 'http://127.0.0.1:5173'];
   
   const origin = req.headers.origin;
