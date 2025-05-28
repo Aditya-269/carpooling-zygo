@@ -23,8 +23,10 @@ const httpServer = createServer(app);
 // Create Socket.IO server
 const io = new SocketIOServer(httpServer, {
   cors: {
-    origin: ['http://localhost:5173', 'https://carpooling-zygo.vercel.app'],
+    origin: ['http://localhost:5173', 'https://carpooling-zygo.vercel.app', 'https://carpooling-zygo.onrender.com'],
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
   },
 });
 
