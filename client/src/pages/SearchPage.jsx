@@ -14,7 +14,9 @@ const SearchPage = () => {
   const [sortBy, setSortBy] = useState('');
   const [departureTimes, setDepartureTimes] = useState([]);
 
-  const { loading, data } = useFetch(`rides/find?from=${from}&to=${to}&seat=${seat}&date=${date}`);
+  // Construct the search URL without double /api
+  const searchUrl = `rides/find?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&seat=${seat}&date=${date}`;
+  const { loading, data } = useFetch(searchUrl);
 
   // Debug logging for departure times
   useEffect(() => {
