@@ -105,7 +105,7 @@ const PublishCard = () => {
 
       console.log('Sending ride data:', JSON.stringify(body, null, 2)); // Debug log
 
-      const response = await axios.post(`${apiUri}/rides`, body, {
+      const response = await axios.post(`${apiUri}/api/rides`, body, {
         withCredentials: true,
         headers: {
           'Content-Type': 'application/json'

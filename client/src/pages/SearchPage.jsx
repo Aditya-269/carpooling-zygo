@@ -10,11 +10,20 @@ import { useState, useMemo, useEffect } from 'react';
 
 const SearchPage = () => {
   const { search } = useLocation();
-  const { from, to, date, seat } = Object.fromEntries(new URLSearchParams(search));
+  const searchParams = new URLSearchParams(search);
+  const from = searchParams.get('from');
+  const to = searchParams.get('to');
+  const date = searchParams.get('date');
+  const seat = searchParams.get('seat');
+
   const [sortBy, setSortBy] = useState('');
   const [departureTimes, setDepartureTimes] = useState([]);
 
-  const { loading, data } = useFetch(`rides/find?from=${from}&to=${to}&seat=${seat}&date=${date}`);
+  // Only fetch if all required parameters are present
+  const shouldFetch = from && to && date && seat;
+  const { loading, data } = useFetch(
+    shouldFetch ? `rides/find?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&seat=${encodeURIComponent(seat)}&date=${encodeURIComponent(date)}` : null
+  );
 
   // Debug logging for departure times
   useEffect(() => {
@@ -106,7 +115,9 @@ const SearchPage = () => {
                 <Skeleton className="h-[200px] w-full my-3 p-4 rounded-xl" />
               </>
             )}
-            {data && (
+            {!shouldFetch ? (
+              <h3 className="text-xl font-semibold">Please enter search criteria to find rides.</h3>
+            ) : data && (
               <>
                 <h3>
                   {from} <MoveRight className="inline-block" /> {to}

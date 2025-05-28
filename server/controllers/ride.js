@@ -223,20 +223,40 @@ export const rateRide = async(req, res, next) => {
   }
 }
 
+// Function to reset weekly carbon savings for all users
+export const resetWeeklyCarbonSavings = async () => {
+    try {
+        await User.updateMany({}, { $set: { 'carbonSaved.weekly': 0 } });
+        console.log('Weekly carbon savings reset for all users');
+    } catch (err) {
+        console.error('Error resetting weekly carbon savings:', err);
+    }
+};
+
+// Function to reset monthly carbon savings for all users
+export const resetMonthlyCarbonSavings = async () => {
+    try {
+        await User.updateMany({}, { $set: { 'carbonSaved.monthly': 0 } });
+        console.log('Monthly carbon savings reset for all users');
+    } catch (err) {
+        console.error('Error resetting monthly carbon savings:', err);
+    }
+};
+
 // *** New function to handle ride completion and carbon calculation ***
 export const completeRideAndCalculateCarbon = async (rideId) => {
     try {
-        console.log(`Attempting to complete ride and calculate carbon for rideId: ${rideId}`);
+        console.log(`[Carbon Calculation] Starting calculation for ride ${rideId}`);
         const ride = await Ride.findById(rideId).populate('passengers').populate('creator');
         if (!ride) {
-            console.error(`Ride not found for completion: ${rideId}`);
+            console.error(`[Carbon Calculation] Ride not found for completion: ${rideId}`);
             return;
         }
 
         // Ensure ride is not already completed
         if (ride.status === 'completed') {
-             console.log(`Ride ${rideId} already completed.`);
-             return;
+            console.log(`[Carbon Calculation] Ride ${rideId} already completed.`);
+            return;
         }
 
         // Calculate ride distance using Haversine formula
@@ -244,6 +264,8 @@ export const completeRideAndCalculateCarbon = async (rideId) => {
         if (ride.origin?.coordinates && ride.destination?.coordinates) {
             const [lng1, lat1] = ride.origin.coordinates;
             const [lng2, lat2] = ride.destination.coordinates;
+            console.log(`[Carbon Calculation] Ride coordinates - Origin: [${lat1}, ${lng1}], Destination: [${lat2}, ${lng2}]`);
+            
             const R = 6371; // Radius of Earth in kilometers
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLng = (lng2 - lng1) * Math.PI / 180;
@@ -253,30 +275,35 @@ export const completeRideAndCalculateCarbon = async (rideId) => {
                 Math.sin(dLng / 2) * Math.sin(dLng / 2);
             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
             rideDistanceKm = R * c;
+        } else {
+            console.error(`[Carbon Calculation] Missing coordinates for ride ${rideId}`);
+            console.log('Origin:', ride.origin);
+            console.log('Destination:', ride.destination);
         }
-        console.log(`Calculated ride distance: ${rideDistanceKm} km`);
+        console.log(`[Carbon Calculation] Calculated ride distance: ${rideDistanceKm} km`);
 
         const CARBON_SAVED_PER_PASSENGER_KM = 50; // grams of CO2
         const carbonSavedPerPassengerRide = rideDistanceKm * CARBON_SAVED_PER_PASSENGER_KM;
-        console.log(`Calculated carbon saved per passenger for this ride: ${carbonSavedPerPassengerRide} grams`);
+        console.log(`[Carbon Calculation] Calculated carbon saved per passenger: ${carbonSavedPerPassengerRide} grams`);
 
         // Update carbon savings for each passenger
-        console.log(`Updating carbon savings for ${ride.passengers.length} passengers.`);
+        console.log(`[Carbon Calculation] Updating carbon savings for ${ride.passengers.length} passengers`);
         for (const passenger of ride.passengers) {
-            console.log(`Attempting to update carbon for passenger: ${passenger._id}`);
-            await User.findByIdAndUpdate(passenger._id, { 
+            console.log(`[Carbon Calculation] Updating carbon for passenger: ${passenger._id}`);
+            const updateResult = await User.findByIdAndUpdate(passenger._id, { 
                 $inc: {
                     'carbonSaved.weekly': carbonSavedPerPassengerRide,
                     'carbonSaved.monthly': carbonSavedPerPassengerRide,
                 }
-            });
+            }, { new: true });
+            console.log(`[Carbon Calculation] Updated passenger carbon savings:`, updateResult.carbonSaved);
         }
 
-        // Mark ride as completed
+        // Update the ride with carbon savings data and mark as completed
+        ride.carbonSavedRide = carbonSavedPerPassengerRide;
         ride.status = 'completed';
         await ride.save();
-
-        console.log(`Ride ${rideId} completed and carbon savings calculated.`);
+        console.log(`[Carbon Calculation] Ride ${rideId} marked as completed with carbon savings: ${carbonSavedPerPassengerRide} grams`);
 
         // Trigger Trust Score Update for participants
         await calculateAndUpdateTrustScore(ride.creator._id);
@@ -285,6 +312,7 @@ export const completeRideAndCalculateCarbon = async (rideId) => {
         }
 
     } catch (err) {
-        console.error(`Error completing ride ${rideId} and calculating carbon:`, err);
+        console.error(`[Carbon Calculation] Error completing ride ${rideId} and calculating carbon:`, err);
+        throw err;
     }
 };

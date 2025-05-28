@@ -32,7 +32,7 @@ const Profile = () => {
   useEffect(() => {
     if (user?.user?._id) {
       setCarbonLoading(true);
-      axios.get(`${apiUri}/users/${user.user._id}/carbon-savings`, { withCredentials: true })
+      axios.get(`${apiUri}/api/users/${user.user._id}/carbon-savings`, { withCredentials: true })
         .then(res => setCarbonSavings(res.data))
         .catch(err => console.error("Error fetching carbon savings:", err))
         .finally(() => setCarbonLoading(false));
@@ -92,7 +92,7 @@ const Profile = () => {
       toast.info('Updating profile...');
       
       await axios.patch(
-        `${apiUri}/users/${user.user._id}`,
+        `${apiUri}/api/users/${user.user._id}`,
         { profilePicture: uploadResponse.data.secure_url },
         { 
           withCredentials: true,
@@ -132,7 +132,7 @@ const Profile = () => {
 
   const onSubmit = async (newData) => {
     try {
-      await axios.patch(`${apiUri}/users/${user.user._id}`, {
+      await axios.patch(`${apiUri}/api/users/${user.user._id}`, {
         name: newData.name,
         profile: {...data.profile, bio: newData.bio}
       }, {withCredentials:true});
@@ -146,7 +146,7 @@ const Profile = () => {
 
   async function handleDelete(id){
     try {
-      await axios.delete(`${apiUri}/rides/${id}`, {withCredentials:true});
+      await axios.delete(`${apiUri}/api/rides/${id}`, {withCredentials:true});
       refetch();
       toast("The ride has been Deleted")
     } catch (error) {

@@ -14,6 +14,7 @@ import userRoute from "./routes/user.routes.js"
 import rideRoute from "./routes/ride.routes.js"
 import notificationRoute from "./routes/notification.routes.js"
 import paymentRoute from "./routes/payment.routes.js"
+import { resetWeeklyCarbonSavings, resetMonthlyCarbonSavings } from "./controllers/ride.js"
 
 const app = express()
 const PORT = 8080;
@@ -22,7 +23,7 @@ const httpServer = createServer(app);
 // Create Socket.IO server
 const io = new SocketIOServer(httpServer, {
   cors: {
-    origin: process.env.ORIGIN || '*',
+    origin: ['http://localhost:5173', 'https://carpooling-zygo.vercel.app'],
     credentials: true,
   },
 });
@@ -41,7 +42,7 @@ app.set("io", io);
 
 //middlewares
 app.use(cors({
-    origin: process.env.ORIGIN,
+    origin: ['http://localhost:5173', 'https://carpooling-zygo.vercel.app'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -82,6 +83,44 @@ io.on("connection", (socket) => {
     console.log("User disconnected: " + socket.id);
   });
 });
+
+// Schedule weekly carbon savings reset (every Monday at midnight)
+const scheduleWeeklyReset = () => {
+    const now = new Date();
+    const daysUntilMonday = (8 - now.getDay()) % 7; // Days until next Monday
+    const nextMonday = new Date(now);
+    nextMonday.setDate(now.getDate() + daysUntilMonday);
+    nextMonday.setHours(0, 0, 0, 0);
+
+    const timeUntilNextMonday = nextMonday.getTime() - now.getTime();
+    
+    // Schedule the reset
+    setTimeout(async () => {
+        await resetWeeklyCarbonSavings();
+        // Schedule the next reset (7 days later)
+        setInterval(resetWeeklyCarbonSavings, 7 * 24 * 60 * 60 * 1000);
+    }, timeUntilNextMonday);
+};
+
+// Schedule monthly carbon savings reset (first day of each month at midnight)
+const scheduleMonthlyReset = () => {
+    const now = new Date();
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    nextMonth.setHours(0, 0, 0, 0);
+
+    const timeUntilNextMonth = nextMonth.getTime() - now.getTime();
+    
+    // Schedule the reset
+    setTimeout(async () => {
+        await resetMonthlyCarbonSavings();
+        // Schedule the next reset (approximately 30 days later)
+        setInterval(resetMonthlyCarbonSavings, 30 * 24 * 60 * 60 * 1000);
+    }, timeUntilNextMonth);
+};
+
+// Start the scheduling
+scheduleWeeklyReset();
+scheduleMonthlyReset();
 
 app.use((err, req, res, next)=>{
   const errorStatus = err.status || 500;

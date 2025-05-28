@@ -28,7 +28,7 @@ const RideComplete = () => {
     try {
       setIsSubmitting(true);
       await axios.post(
-        `${apiUri}/rides/${rideId}/rate`,
+        `${apiUri}/api/rides/${rideId}/rate`,
         { rating },
         { withCredentials: true }
       );
