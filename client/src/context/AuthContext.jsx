@@ -1,5 +1,4 @@
 import { createContext, useEffect, useReducer, useContext } from "react"
-import axios from "axios"
 
 const INITIAL_STATE = {
   user: JSON.parse(localStorage.getItem("user")) || null,
@@ -26,7 +25,6 @@ const AuthReducer = (state, action) => {
         error: null
       }
     case "LOGIN_SUCCESS":
-      localStorage.setItem("user", JSON.stringify(action.payload));
       return{
         user: action.payload,
         loading: false,
@@ -39,7 +37,7 @@ const AuthReducer = (state, action) => {
         error: action.payload
       }
     case "LOGOUT":
-      localStorage.removeItem("user");
+      localStorage.removeItem("user"); // Clear user data from local storage
       return{
         user: null,
         loading: false,
@@ -53,43 +51,10 @@ const AuthReducer = (state, action) => {
 export const AuthContextProvider = ({children}) => {
   const [state, dispatch] = useReducer(AuthReducer, INITIAL_STATE)
 
-  // Add axios interceptor to include credentials in all requests
   useEffect(() => {
-    // Set default axios config
-    axios.defaults.withCredentials = true;
-    
-    // Add request interceptor
-    const requestInterceptor = axios.interceptors.request.use(
-      (config) => {
-        // Add headers to all requests
-        config.headers['Content-Type'] = 'application/json';
-        config.headers['Accept'] = 'application/json';
-        config.headers['X-Requested-With'] = 'XMLHttpRequest';
-        return config;
-      },
-      (error) => {
-        return Promise.reject(error);
-      }
-    );
-
-    // Add response interceptor
-    const responseInterceptor = axios.interceptors.response.use(
-      (response) => response,
-      (error) => {
-        if (error.response?.status === 401) {
-          // Clear user data and redirect to login
-          dispatch({ type: 'LOGOUT' });
-        }
-        return Promise.reject(error);
-      }
-    );
-
-    // Cleanup interceptors
-    return () => {
-      axios.interceptors.request.eject(requestInterceptor);
-      axios.interceptors.response.eject(responseInterceptor);
-    };
-  }, []);
+    localStorage.setItem("user", JSON.stringify(state.user))
+  }, [state.user])
+  
 
   return (
     <AuthContext.Provider
