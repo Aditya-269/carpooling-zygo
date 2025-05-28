@@ -27,9 +27,7 @@ const httpServer = createServer(app);
 // Create Socket.IO server
 const io = new SocketIOServer(httpServer, {
   cors: {
-    origin: process.env.NODE_ENV === 'production' 
-      ? ['https://carpooling-zygo.vercel.app', process.env.ORIGIN]
-      : ['http://localhost:5173', 'http://127.0.0.1:5173'],
+    origin: 'https://carpooling-zygo.vercel.app',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
     credentials: true,
@@ -48,75 +46,18 @@ const connectDB = (url) => {
 // Attach io to app for access in controllers
 app.set("io", io);
 
-// Add CORS headers to all responses before other middleware
+// CORS middleware - must be first
 app.use((req, res, next) => {
-  const allowedOrigins = process.env.NODE_ENV === 'production' 
-    ? ['https://carpooling-zygo.vercel.app', process.env.ORIGIN]
-    : ['http://localhost:5173', 'http://127.0.0.1:5173'];
+  res.header('Access-Control-Allow-Origin', 'https://carpooling-zygo.vercel.app');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Max-Age', '86400');
   
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin);
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Max-Age', '86400');
-  }
-  next();
-});
-
-// Handle preflight requests
-app.options('*', (req, res) => {
-  const allowedOrigins = process.env.NODE_ENV === 'production' 
-    ? ['https://carpooling-zygo.vercel.app', process.env.ORIGIN]
-    : ['http://localhost:5173', 'http://127.0.0.1:5173'];
-  
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin);
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Max-Age', '86400');
-    res.sendStatus(204);
-  } else {
-    res.sendStatus(403);
-  }
-});
-
-// Regular CORS middleware
-app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://carpooling-zygo.vercel.app', process.env.ORIGIN]
-    : ['http://localhost:5173', 'http://127.0.0.1:5173'],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
-  exposedHeaders: ['set-cookie'],
-  preflightContinue: false,
-  optionsSuccessStatus: 204,
-  maxAge: 86400 // 24 hours
-}));
-
-// Add authentication check middleware
-app.use((req, res, next) => {
-  // Skip auth check for OPTIONS requests
+  // Handle preflight
   if (req.method === 'OPTIONS') {
-    return next();
+    return res.sendStatus(204);
   }
-  
-  // Skip auth check for public routes
-  const publicRoutes = ['/api/auth/login', '/api/auth/register'];
-  if (publicRoutes.includes(req.path)) {
-    return next();
-  }
-
-  // Check for authentication token
-  const token = req.cookies.access_token;
-  if (!token) {
-    return res.status(401).json({ message: 'Not authenticated' });
-  }
-
   next();
 });
 
@@ -165,6 +106,28 @@ if (process.env.NODE_ENV === 'production') {
     res.sendFile(path.join(__dirname, '../client/dist', 'index.html'));
   });
 }
+
+// Add authentication check middleware
+app.use((req, res, next) => {
+  // Skip auth check for OPTIONS requests
+  if (req.method === 'OPTIONS') {
+    return next();
+  }
+  
+  // Skip auth check for public routes
+  const publicRoutes = ['/api/auth/login', '/api/auth/register'];
+  if (publicRoutes.includes(req.path)) {
+    return next();
+  }
+
+  // Check for authentication token
+  const token = req.cookies.access_token;
+  if (!token) {
+    return res.status(401).json({ message: 'Not authenticated' });
+  }
+
+  next();
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {
