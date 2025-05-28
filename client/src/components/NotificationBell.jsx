@@ -28,48 +28,80 @@ const NotificationBell = () => {
   const socketRef = useRef(null);
 
   const fetchNotifications = async () => {
+    if (!user?.user?._id) return; // Don't fetch if user is not authenticated
+    
     try {
       const response = await axios.get(`${apiUri}/api/notifications`, {
         withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
       });
       setNotifications(response.data);
       setUnreadCount(response.data.filter(n => !n.read).length);
     } catch (error) {
       console.error('Error fetching notifications:', error);
+      if (error.response?.status === 401) {
+        // Handle unauthorized error - user might need to log in again
+        toast.error('Please log in to view notifications');
+      }
     }
   };
 
   useEffect(() => {
-    fetchNotifications();
-    if (user && user.user && user.user._id) {
+    if (user?.user?._id) {
+      fetchNotifications();
+      
       // Connect to Socket.IO
       socketRef.current = io(socketUri, {
         withCredentials: true,
         transports: ["websocket"],
+        auth: {
+          userId: user.user._id
+        }
       });
+
       // Authenticate/join room
       socketRef.current.emit("authenticate", user.user._id);
+
       // Listen for notification events
       socketRef.current.on("notification", (notification) => {
         setNotifications(prev => [notification, ...prev]);
         setUnreadCount(prev => prev + 1);
         toast.success("New notification received!");
       });
+
+      // Handle connection errors
+      socketRef.current.on("connect_error", (error) => {
+        console.error("Socket connection error:", error);
+        if (error.message === "Unauthorized") {
+          toast.error("Please log in to receive notifications");
+        }
+      });
     }
+
     return () => {
       if (socketRef.current) {
         socketRef.current.disconnect();
       }
     };
-    // eslint-disable-next-line
-  }, [user && user.user && user.user._id]);
+  }, [user?.user?._id]);
 
   const handleMarkAsRead = async (notificationId) => {
+    if (!user?.user?._id) return;
+    
     try {
       await axios.patch(
         `${apiUri}/api/notifications/${notificationId}/read`,
         {},
-        { withCredentials: true }
+        { 
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
+        }
       );
       fetchNotifications();
     } catch (error) {
@@ -78,17 +110,28 @@ const NotificationBell = () => {
   };
 
   const handleMarkAllAsRead = async () => {
+    if (!user?.user?._id) return;
+    
     try {
       await axios.patch(
         `${apiUri}/api/notifications/read-all`,
         {},
-        { withCredentials: true }
+        { 
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
+        }
       );
       fetchNotifications();
     } catch (error) {
       toast.error('Failed to mark all notifications as read');
     }
   };
+
+  // Don't render the notification bell if user is not authenticated
+  if (!user?.user?._id) return null;
 
   return (
     <DropdownMenu>
@@ -145,12 +188,14 @@ const NotificationBell = () => {
                     <Badge variant="secondary" className="h-2 w-2 rounded-full" />
                   )}
                 </div>
-                <Link
-                  to={`/ride/${notification.ride._id}`}
-                  className="text-xs text-primary mt-1 hover:underline"
-                >
-                  View Ride Details
-                </Link>
+                {notification.ride && (
+                  <Link
+                    to={`/ride/${notification.ride._id}`}
+                    className="text-xs text-primary mt-1 hover:underline"
+                  >
+                    View Ride Details
+                  </Link>
+                )}
               </DropdownMenuItem>
             ))
           )}
