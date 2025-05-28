@@ -21,11 +21,62 @@ const RideDetail = () => {
   const { user } = useAuth();
 
   const handleBook = async() => {
-    try{
-      const res = await axios.get(`${apiUri}/rides/${rideId}/join`, {withCredentials: true})
-      toast.success("Booking successful!");
-      navigate(`/ride/${rideId}/confirmed`, { state: { rideData: data } });
-    }catch(err){
+    if (!user) {
+      toast.error('Please log in to join a ride');
+      return;
+    }
+
+    try {
+      const apiUrl = `/api/rides/${rideId}/join`;
+      
+      console.log('Joining ride at:', apiUrl);
+      
+      const res = await axios.get(apiUrl, {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        validateStatus: function (status) {
+          return status >= 200 && status < 500;
+        }
+      });
+
+      console.log('Join response:', res);
+
+      if (res.status === 401) {
+        toast.error('Please log in to join a ride');
+        return;
+      }
+
+      if (res.status === 400) {
+        // Handle specific error messages
+        if (res.data === 'You already joined this ride!') {
+          toast.info('You have already joined this ride');
+          // Navigate to the confirmation page anyway since they're already a passenger
+          navigate(`/ride/${rideId}/confirmed`, { state: { rideData: data } });
+          return;
+        }
+        if (res.data === 'You cannot join your own ride!') {
+          toast.error('You cannot join your own ride');
+          return;
+        }
+        if (res.data === 'Ride is full!') {
+          toast.error('Sorry, this ride is full');
+          return;
+        }
+        toast.error(res.data || 'Failed to join ride');
+        return;
+      }
+
+      if (res.status === 200) {
+        toast.success("Booking successful!");
+        navigate(`/ride/${rideId}/confirmed`, { state: { rideData: data } });
+      } else {
+        toast.error(res.data?.message || 'Failed to join ride');
+      }
+    } catch (err) {
       const errorMessage = err.response?.data?.message || 
                           err.response?.data?.error || 
                           err.message || 

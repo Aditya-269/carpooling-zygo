@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Star } from "lucide-react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
 import useFetch from "@/hooks/useFetch";
 import { useState, useEffect } from "react";
 import axios from "axios";
@@ -11,9 +11,11 @@ const apiUri = import.meta.env.VITE_REACT_API_URI;
 
 const RideComplete = () => {
   const { rideId } = useParams();
+  const { state } = useLocation();
   const navigate = useNavigate();
   const { data: rideData, error, loading } = useFetch(`rides/${rideId}`);
   const [rating, setRating] = useState(0);
+  const [hoveredRating, setHoveredRating] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -25,18 +27,52 @@ const RideComplete = () => {
   }, [error, navigate]);
 
   const handleRating = async () => {
+    if (rating === 0) {
+      toast.error("Please select a rating");
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
-      setIsSubmitting(true);
-      await axios.post(
-        `${apiUri}/rides/${rideId}/rate`,
+      const apiUrl = `/api/rides/${rideId}/rate`;
+      
+      console.log('Submitting rating at:', apiUrl);
+      
+      const res = await axios.post(
+        apiUrl,
         { rating },
-        { withCredentials: true }
+        {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          validateStatus: function (status) {
+            return status >= 200 && status < 500;
+          }
+        }
       );
-      toast.success("Rating submitted successfully");
-      // Navigate to home after successful rating
-      navigate('/', { replace: true });
+
+      console.log('Rating response:', res);
+
+      if (res.status === 401) {
+        toast.error('Please log in to rate this ride');
+        return;
+      }
+
+      if (res.status === 200) {
+        toast.success("Thank you for your rating!");
+        navigate('/');
+      } else {
+        toast.error(res.data?.message || 'Failed to submit rating');
+      }
     } catch (err) {
-      toast.error("Failed to submit rating");
+      const errorMessage = err.response?.data?.message || 
+                          err.response?.data?.error || 
+                          err.message || 
+                          "Failed to submit rating";
+      toast.error(errorMessage);
       console.error(err);
     } finally {
       setIsSubmitting(false);
@@ -100,9 +136,17 @@ const RideComplete = () => {
                   <button
                     key={star}
                     onClick={() => setRating(star)}
-                    className={`p-1 ${rating >= star ? 'text-yellow-400' : 'text-gray-300'}`}
+                    onMouseEnter={() => setHoveredRating(star)}
+                    onMouseLeave={() => setHoveredRating(0)}
+                    className="focus:outline-none"
                   >
-                    <Star className="w-8 h-8" fill={rating >= star ? 'currentColor' : 'none'} />
+                    <Star
+                      className={`w-8 h-8 ${
+                        star <= (hoveredRating || rating)
+                          ? 'text-yellow-400 fill-yellow-400'
+                          : 'text-gray-300'
+                      }`}
+                    />
                   </button>
                 ))}
               </div>
@@ -110,7 +154,7 @@ const RideComplete = () => {
             <Button
               className="w-full"
               onClick={handleRating}
-              disabled={rating === 0 || isSubmitting}
+              disabled={isSubmitting || rating === 0}
             >
               {isSubmitting ? 'Submitting...' : 'Submit Rating'}
             </Button>
