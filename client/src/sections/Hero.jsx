@@ -31,7 +31,6 @@ const Hero = () => {
 
         <div className="relative w-full max-w-3xl mx-auto transform transition-all duration-300 hover:scale-[1.02]">
           <Search />
-          
         </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">

@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form"
 import { CalendarIcon, MapPin, Minus, Plus, User, Search as SearchIcon } from "lucide-react"
 import { Input } from "./ui/input"
-import { useSearchParams, useNavigate } from "react-router-dom"
+import { useSearchParams } from "react-router-dom"
 import LocationAutocomplete from "./LocationAutocomplete"
 
 const searchSchema = z.object({
@@ -21,7 +21,6 @@ const searchSchema = z.object({
 
 const Search = () => {
   const [searchParams, setSearchParams] = useSearchParams()
-  const navigate = useNavigate()
 
   const form = useForm({
     resolver: zodResolver(searchSchema),
@@ -29,20 +28,20 @@ const Search = () => {
       from: searchParams.get("from") || "",
       to: searchParams.get("to") || "",
       seat: parseInt(searchParams.get("seat")) >= 1 && parseInt(searchParams.get("seat")) <= 10 ? parseInt(searchParams.get("seat")) : 1,
-      date: searchParams.get("date") && !isNaN(new Date(searchParams.get("date")).getTime()) ? new Date(searchParams.get("date")) : new Date()
+      date: searchParams.get("date") ? new Date(searchParams.get("date")) : new Date()
     },
   });
 
   const onSubmit = async (data) => {
-    const params = {
-      from: data.from.trim(),
-      to: data.to.trim(),
-      seat: data.seat.toString(),
-      date: format(data.date, "yyyy-MM-dd")
-    };
-    setSearchParams(params, { replace: true });
-    // Navigate to search page
-    navigate('/search');
+    if (data.from && data.to && data.seat && data.date) {
+      const params = {
+        from: data.from,
+        to: data.to,
+        seat: data.seat.toString(),
+        date: format(data.date, "yyyy-MM-dd")
+      };
+      setSearchParams(params, { replace: true });
+    }
   };
 
   return (
