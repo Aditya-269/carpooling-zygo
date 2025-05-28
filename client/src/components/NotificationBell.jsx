@@ -19,7 +19,7 @@ import { AuthContext } from "@/context/AuthContext";
 import { io } from "socket.io-client";
 
 const apiUri = import.meta.env.VITE_REACT_API_URI;
-const socketUri = apiUri.replace(/\/api.*/, ""); // Remove /api if present
+const socketUri = apiUri.replace(/\/api$/, ""); // Remove trailing /api if present
 
 const NotificationBell = () => {
   const [notifications, setNotifications] = useState([]);
@@ -31,7 +31,7 @@ const NotificationBell = () => {
     try {
       const apiUrl = import.meta.env.DEV 
         ? `/api/notifications` 
-        : `${import.meta.env.VITE_REACT_API_URI}/notifications`;
+        : `${apiUri}/notifications`;
       
       console.log('Fetching notifications from:', apiUrl);
       
