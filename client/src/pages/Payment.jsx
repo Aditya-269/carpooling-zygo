@@ -31,6 +31,7 @@ const Payment = () => {
 
   const handlePaymentSuccess = async (details) => {
     try {
+      setIsProcessing(true);
       console.log('Payment successful, saving data...');
       // Save payment data to backend
       const paymentData = {
@@ -60,18 +61,19 @@ const Payment = () => {
         );
         console.log('Ride marked as completed');
         
-        // Use React Router's navigate with replace to prevent going back
+        // Navigate to complete page
         navigate(`/ride/${rideId}/complete`, { replace: true });
       } catch (error) {
         console.error('Error updating ride status:', error);
-        // Even if ride status update fails, we should still navigate to complete page
+        toast.error('Payment successful but failed to update ride status');
         navigate(`/ride/${rideId}/complete`, { replace: true });
       }
     } catch (error) {
       console.error('Error processing payment:', error);
       toast.error('Failed to process payment');
-      // Navigate back to tracking page on error
-      navigate(`/ride/${rideId}/tracking`, { replace: true });
+      navigate(`/ride/${rideId}/complete`, { replace: true });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -147,12 +149,14 @@ const Payment = () => {
                     onError={(err) => {
                       console.error("PayPal Error:", err);
                       toast.error("Payment failed. Please try again.");
+                      setIsProcessing(false);
                     }}
                     onInit={() => {
                       setIsPayPalReady(true);
                     }}
                     onCancel={() => {
                       toast.info("Payment cancelled");
+                      setIsProcessing(false);
                     }}
                   />
                 </PayPalScriptProvider>
