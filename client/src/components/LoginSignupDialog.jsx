@@ -22,7 +22,7 @@ const LoginSignupDialog = () => {
     try {
       const apiUrl = import.meta.env.DEV 
         ? `/api/auth/login` 
-        : `${import.meta.env.VITE_REACT_API_URI}/api/auth/login`;
+        : `${apiUri}/auth/login`;
       
       console.log('Making login request to:', apiUrl);
       
@@ -66,7 +66,7 @@ const LoginSignupDialog = () => {
     try {
       const apiUrl = import.meta.env.DEV 
         ? `/api/auth/register` 
-        : `${import.meta.env.VITE_REACT_API_URI}/api/auth/register`;
+        : `${apiUri}/auth/register`;
       
       console.log('Making signup request to:', apiUrl);
       
