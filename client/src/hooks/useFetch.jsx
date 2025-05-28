@@ -4,11 +4,7 @@ import { useEffect, useState } from "react"
 const baseURL = import.meta.env.VITE_REACT_API_URI;
 // const baseURL = "http://localhost:8080/api";
 
-// Configure axios defaults
-axios.defaults.withCredentials = true;
-axios.defaults.headers.common['Content-Type'] = 'application/json';
-
-const useFetch = (endpoint, includeCredentials = true) => {
+const useFetch = (endpoint, includeCredentials = false) => {
   const [loading, setLoading] = useState(false)
   const [data, setData] = useState(null)
   const [error, setError] = useState(null)
@@ -19,13 +15,7 @@ const useFetch = (endpoint, includeCredentials = true) => {
     if (!endpoint) return; // Don't fetch if no endpoint is provided
     
     setLoading(true)
-    const axiosConfig = {
-      withCredentials: includeCredentials,
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      }
-    };
+    const axiosConfig = includeCredentials ? { withCredentials: true } : {};
     axios
       .get(url, axiosConfig)
       .then((response) => {
@@ -49,13 +39,7 @@ const useFetch = (endpoint, includeCredentials = true) => {
     if (!endpoint) return; // Don't fetch if no endpoint is provided
     
     setLoading(true)
-    const axiosConfig = {
-      withCredentials: includeCredentials,
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      }
-    };
+    const axiosConfig = includeCredentials ? { withCredentials: true } : {};
     axios
       .get(url, axiosConfig)
       .then((response) => {
