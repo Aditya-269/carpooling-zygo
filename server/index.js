@@ -27,9 +27,7 @@ const httpServer = createServer(app);
 // Create Socket.IO server
 const io = new SocketIOServer(httpServer, {
   cors: {
-    origin: process.env.NODE_ENV === 'production' 
-      ? 'https://carpooling-zygo.vercel.app'
-      : 'http://localhost:5173',
+    origin: 'https://carpooling-zygo.vercel.app',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
     credentials: true,
@@ -50,11 +48,7 @@ app.set("io", io);
 
 // CORS middleware - must be first
 app.use((req, res, next) => {
-  const origin = process.env.NODE_ENV === 'production' 
-    ? 'https://carpooling-zygo.vercel.app'
-    : 'http://localhost:5173';
-    
-  res.header('Access-Control-Allow-Origin', origin);
+  res.header('Access-Control-Allow-Origin', 'https://carpooling-zygo.vercel.app');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
   res.header('Access-Control-Allow-Credentials', 'true');

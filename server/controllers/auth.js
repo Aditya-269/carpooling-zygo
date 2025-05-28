@@ -21,10 +21,9 @@ export const register = async (req, res, next) => {
 
     const options = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      secure: true,
       maxAge: 24 * 60 * 60 * 1000, // 1 day expiration
-      domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
+      sameSite: 'strict' 
     };
 
     const { password, isAdmin, ...otherDetails } = newUser._doc;
@@ -48,10 +47,9 @@ export const login = async(req, res, next)=>{
 
     const options = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      secure: true,
       maxAge: 24 * 60 * 60 * 1000, // 1 day expiration
-      domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
+      sameSite: 'strict' 
     };
 
     const { password, isAdmin, ...otherDetails } = user._doc;
@@ -70,8 +68,9 @@ export const logout = async (req, res, next) => {
     res.clearCookie("accessToken", {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
+      sameSite: 'strict',
+      path: '/',
+      domain: process.env.COOKIE_DOMAIN || undefined
     });
     res.status(200).json({ message: "Logged out successfully" });
   } catch (err) {
