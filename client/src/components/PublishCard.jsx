@@ -113,8 +113,7 @@ const PublishCard = () => {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest',
-          'Authorization': `Bearer ${user?.accessToken}`
+          'X-Requested-With': 'XMLHttpRequest'
         }
       });
 
