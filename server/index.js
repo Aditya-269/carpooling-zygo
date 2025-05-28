@@ -8,6 +8,8 @@ import cookieParser from "cookie-parser"
 import { createServer } from "http"
 import chatRoutes from "./routes/chat.routes.js"
 import { Server as SocketIOServer } from "socket.io"
+import path from 'path'
+import { fileURLToPath } from 'url'
 
 import authRoute from "./routes/auth.routes.js"
 import userRoute from "./routes/user.routes.js"
@@ -15,14 +17,21 @@ import rideRoute from "./routes/ride.routes.js"
 import notificationRoute from "./routes/notification.routes.js"
 import paymentRoute from "./routes/payment.routes.js"
 
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
 const app = express()
-const PORT = 8080;
+const PORT = process.env.PORT || 8080;
 const httpServer = createServer(app);
 
 // Create Socket.IO server
 const io = new SocketIOServer(httpServer, {
   cors: {
-    origin: process.env.ORIGIN || '*',
+    origin: process.env.NODE_ENV === 'production' 
+      ? process.env.ORIGIN 
+      : ['http://localhost:5173', 'http://127.0.0.1:5173'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
     credentials: true,
   },
 });
@@ -41,16 +50,77 @@ app.set("io", io);
 
 //middlewares
 app.use(cors({
-    origin: process.env.ORIGIN,
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    exposedHeaders: ['set-cookie']
+  origin: process.env.NODE_ENV === 'production' 
+    ? process.env.ORIGIN 
+    : ['http://localhost:5173', 'http://127.0.0.1:5173'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  exposedHeaders: ['set-cookie'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
+  maxAge: 86400 // 24 hours
+}));
+
+// Handle preflight requests explicitly
+app.options('*', (req, res) => {
+  const allowedOrigins = process.env.NODE_ENV === 'production' 
+    ? [process.env.ORIGIN]
+    : ['http://localhost:5173', 'http://127.0.0.1:5173'];
+  
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Max-Age', '86400');
+    res.sendStatus(204);
+  } else {
+    res.sendStatus(403);
   }
-))
+});
+
+// Add CORS headers to all responses
+app.use((req, res, next) => {
+  const allowedOrigins = process.env.NODE_ENV === 'production' 
+    ? [process.env.ORIGIN]
+    : ['http://localhost:5173', 'http://127.0.0.1:5173'];
+  
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Credentials', 'true');
+  }
+  next();
+});
+
+// Add authentication check middleware
+app.use((req, res, next) => {
+  // Skip auth check for OPTIONS requests
+  if (req.method === 'OPTIONS') {
+    return next();
+  }
+  
+  // Skip auth check for public routes
+  const publicRoutes = ['/api/auth/login', '/api/auth/register'];
+  if (publicRoutes.includes(req.path)) {
+    return next();
+  }
+
+  // Check for authentication token
+  const token = req.cookies.access_token;
+  if (!token) {
+    return res.status(401).json({ message: 'Not authenticated' });
+  }
+
+  next();
+});
+
 app.use(cookieParser())
 app.use(express.json())
 
+// API Routes
 app.use("/api/users", userRoute);
 app.use("/api/auth", authRoute);
 app.use("/api/rides", rideRoute);
@@ -70,7 +140,6 @@ io.on("connection", (socket) => {
     socket.to(rideId).emit("message", message);
   });
 
-  // Listen for authentication event to join user-specific room
   socket.on("authenticate", (userId) => {
     if (userId) {
       socket.join(userId.toString());
@@ -83,7 +152,19 @@ io.on("connection", (socket) => {
   });
 });
 
-app.use((err, req, res, next)=>{
+// Serve static files in production
+if (process.env.NODE_ENV === 'production') {
+  // Serve static files from the React app
+  app.use(express.static(path.join(__dirname, '../client/dist')));
+
+  // Handle React routing, return all requests to React app
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/dist', 'index.html'));
+  });
+}
+
+// Error handling middleware
+app.use((err, req, res, next) => {
   const errorStatus = err.status || 500;
   const errorMessage = err.message || "Something went wrong";
   return res.status(errorStatus).json({

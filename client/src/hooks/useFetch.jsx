@@ -1,60 +1,58 @@
+import { useState, useEffect } from "react"
 import axios from "axios"
-import { useEffect, useState } from "react"
 
-const baseURL = import.meta.env.VITE_REACT_API_URI;
-// const baseURL = "http://localhost:8080/api";
-
-const useFetch = (endpoint, includeCredentials = false) => {
-  const [loading, setLoading] = useState(false)
+const useFetch = (url) => {
   const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  const url = `${baseURL}/${endpoint}`;
-
   useEffect(() => {
-    setLoading(true)
-    const axiosConfig = includeCredentials ? { withCredentials: true } : {};
-    axios
-      .get(url, axiosConfig)
-      .then((response) => {
-        setData(response.data)
-      })
-      .catch((err) => {
-        // Extract error message from the response
-        const errorMessage = err.response?.data?.message || 
-                           err.response?.data?.error || 
-                           err.message || 
-                           "An error occurred";
-        setError(errorMessage);
-      })
-      .finally(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        const apiUrl = import.meta.env.DEV 
+          ? `/api/${url}` 
+          : `${import.meta.env.VITE_REACT_API_URI}/api/${url}`;
+        
+        console.log('Fetching from:', apiUrl);
+        
+        const res = await axios.get(apiUrl, {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          validateStatus: function (status) {
+            return status >= 200 && status < 500; // Accept all status codes less than 500
+          }
+        })
+        
+        console.log('Response received:', res);
+        
+        if (res.status === 401) {
+          setError('Not authenticated');
+          return;
+        }
+        
+        setData(res.data)
+      } catch (err) {
+        console.error('API Error:', {
+          url: `/${url}`,
+          status: err.response?.status,
+          message: err.message,
+          response: err.response?.data
+        });
+        setError(err.response?.data?.message || err.message)
+      } finally {
         setLoading(false)
-      })
-    
-  }, [url, includeCredentials])
+      }
+    }
 
-  function refetch(){
-    setLoading(true)
-    const axiosConfig = includeCredentials ? { withCredentials: true } : {};
-    axios
-      .get(url, axiosConfig)
-      .then((response) => {
-        setData(response.data)
-      })
-      .catch((err) => {
-        // Extract error message from the response
-        const errorMessage = err.response?.data?.message || 
-                           err.response?.data?.error || 
-                           err.message || 
-                           "An error occurred";
-        setError(errorMessage);
-      })
-      .finally(() => {
-        setLoading(false)
-      })
-  }
-  
-  return { data, loading, error, refetch }
+    fetchData()
+  }, [url])
+
+  return { data, loading, error }
 }
 
 export default useFetch

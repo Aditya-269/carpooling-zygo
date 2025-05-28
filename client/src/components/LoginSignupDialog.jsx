@@ -7,39 +7,104 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
 import { useContext, useState } from "react"
 import { AuthContext } from "@/context/AuthContext"
 import axios from "axios"
+import { toast } from "sonner"
 
-const apiUri = import.meta.env.VITE_REACT_API_URI
+// Use relative path in development, full URL in production
+const apiUri = import.meta.env.DEV ? '/api' : import.meta.env.VITE_REACT_API_URI
 
 const LoginSignupDialog = () => {
   const { loading, error, dispatch } = useContext(AuthContext);
   const [loginData, setLoginData] = useState({ email: "", password: "" });
   const [signupData, setSignupData] = useState({ name: "", email: "", password: "" });
 
-  const handleLogin = async (event) => {
-    event.preventDefault();
-    dispatch({ type: 'LOGIN_START' });
-    try{
-      const res = await axios.post(`${apiUri}/auth/login`, loginData, {withCredentials: true})
-      dispatch({type:"LOGIN_SUCCESS", payload: res.data})
-      setLoginData({ email: "", password: "" })
-    }catch(err){
-      dispatch({type: "LOGIN_FAILED", payload: err.response.data})
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    try {
+      const apiUrl = import.meta.env.DEV 
+        ? `/api/auth/login` 
+        : `${import.meta.env.VITE_REACT_API_URI}/api/auth/login`;
+      
+      console.log('Making login request to:', apiUrl);
+      
+      const res = await axios.post(apiUrl, {
+        email: loginData.email,
+        password: loginData.password
+      }, {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        validateStatus: function (status) {
+          return status >= 200 && status < 500; // Accept all status codes less than 500
+        }
+      });
+
+      console.log('Login response:', res);
+
+      if (res.status === 200) {
+        dispatch({ type: "LOGIN_SUCCESS", payload: res.data });
+        setLoginData({ email: "", password: "" });
+        toast.success("Login successful!");
+      } else {
+        const errorMessage = res.data?.message || res.data?.error || "Failed to login";
+        toast.error(errorMessage);
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      const errorMessage = err.response?.data?.message || 
+                          err.response?.data?.error || 
+                          err.message || 
+                          "Failed to login";
+      toast.error(errorMessage);
     }
   };
 
+  const handleSignup = async (e) => {
+    e.preventDefault();
+    try {
+      const apiUrl = import.meta.env.DEV 
+        ? `/api/auth/register` 
+        : `${import.meta.env.VITE_REACT_API_URI}/api/auth/register`;
+      
+      console.log('Making signup request to:', apiUrl);
+      
+      const res = await axios.post(apiUrl, {
+        name: signupData.name,
+        email: signupData.email,
+        password: signupData.password
+      }, {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        validateStatus: function (status) {
+          return status >= 200 && status < 500; // Accept all status codes less than 500
+        }
+      });
 
-  const handleSignup = async (event) => {
-    event.preventDefault();
-    dispatch({ type: 'LOGIN_START' });
-    try{
-      const res = await axios.post(`${apiUri}/auth/register`, signupData, {withCredentials: true})
-      dispatch({type:"LOGIN_SUCCESS", payload: res.data})
-      setSignupData({ name: "", email: "", password: "" })
-    }catch(err){
-      dispatch({type: "LOGIN_FAILED", payload: err.response.data})
+      console.log('Signup response:', res);
+
+      if (res.status === 201) {
+        dispatch({ type: "LOGIN_SUCCESS", payload: res.data });
+        setSignupData({ name: "", email: "", password: "" });
+        toast.success("Registration successful!");
+      } else {
+        const errorMessage = res.data?.message || res.data?.error || "Failed to register";
+        toast.error(errorMessage);
+      }
+    } catch (err) {
+      console.error('Signup error:', err);
+      const errorMessage = err.response?.data?.message || 
+                          err.response?.data?.error || 
+                          err.message || 
+                          "Failed to register";
+      toast.error(errorMessage);
     }
   };
-
 
   return (
     <Dialog>

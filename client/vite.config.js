@@ -19,6 +19,48 @@ export default defineConfig(({ mode }) => {
       'process.env': env,
       // Ensure VITE_ prefixed variables are available
       'import.meta.env.VITE_GOOGLE_MAPS_API_KEY': JSON.stringify(env.VITE_GOOGLE_MAPS_API_KEY)
+    },
+    build: {
+      outDir: 'dist',
+      assetsDir: 'assets',
+      // Ensure the build is optimized for production
+      minify: 'terser',
+      // Generate source maps for production
+      sourcemap: false,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            vendor: ['react', 'react-dom', 'react-router-dom'],
+          },
+        },
+      },
+    },
+    server: {
+      port: 5173,
+      proxy: {
+        '/api': {
+          target: 'https://carpooling-zygo.onrender.com',
+          changeOrigin: true,
+          secure: false,
+          ws: true,
+          rewrite: (path) => path.replace(/^\/api/, '/api'),
+          configure: (proxy, _options) => {
+            proxy.on('error', (err, _req, _res) => {
+              console.log('proxy error', err);
+            });
+            proxy.on('proxyReq', (proxyReq, req, _res) => {
+              console.log('Sending Request to the Target:', req.method, req.url);
+              // Log the rewritten URL
+              console.log('Rewritten URL:', proxyReq.path);
+            });
+            proxy.on('proxyRes', (proxyRes, req, _res) => {
+              console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
+              // Log response headers for debugging
+              console.log('Response Headers:', proxyRes.headers);
+            });
+          }
+        }
+      }
     }
   }
 })

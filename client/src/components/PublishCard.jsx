@@ -16,7 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { cn } from "@/lib/utils";
 import { format, isSameDay, isAfter } from "date-fns";
 
-const apiUri = import.meta.env.VITE_REACT_API_URI
+const apiUri = import.meta.env.DEV ? '/api' : import.meta.env.VITE_REACT_API_URI;
 
 const formSchema = z.object({
   from: z.string().min(1, "Please enter a departure location"),
@@ -108,7 +108,8 @@ const PublishCard = () => {
       const response = await axios.post(`${apiUri}/rides`, body, {
         withCredentials: true,
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         }
       });
 
@@ -126,6 +127,7 @@ const PublishCard = () => {
       
       const errorMessage = error.response?.data?.message || 
                           error.response?.data?.error || 
+                          error.message ||
                           'Failed to create ride. Please try again.';
       toast.error(errorMessage);
     }

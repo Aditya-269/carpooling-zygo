@@ -32,9 +32,35 @@ const Profile = () => {
   useEffect(() => {
     if (user?.user?._id) {
       setCarbonLoading(true);
-      axios.get(`${apiUri}/users/${user.user._id}/carbon-savings`, { withCredentials: true })
-        .then(res => setCarbonSavings(res.data))
-        .catch(err => console.error("Error fetching carbon savings:", err))
+      const apiUrl = import.meta.env.DEV 
+        ? `/api/users/${user.user._id}/carbon-savings` 
+        : `${apiUri}/api/users/${user.user._id}/carbon-savings`;
+      
+      console.log('Fetching carbon savings from:', apiUrl);
+      
+      axios.get(apiUrl, { 
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        validateStatus: function (status) {
+          return status >= 200 && status < 500;
+        }
+      })
+        .then(res => {
+          console.log('Carbon savings response:', res);
+          if (res.status === 401) {
+            toast.error('Please log in to view carbon savings');
+            return;
+          }
+          setCarbonSavings(res.data);
+        })
+        .catch(err => {
+          console.error('Error fetching carbon savings:', err);
+          toast.error(err.response?.data?.message || 'Failed to fetch carbon savings');
+        })
         .finally(() => setCarbonLoading(false));
     }
   }, [user]);
@@ -91,11 +117,22 @@ const Profile = () => {
 
       toast.info('Updating profile...');
       
+      const apiUrl = import.meta.env.DEV 
+        ? `/api/users/${user.user._id}` 
+        : `${apiUri}/api/users/${user.user._id}`;
+      
+      console.log('Updating profile at:', apiUrl);
+      
       await axios.patch(
-        `${apiUri}/users/${user.user._id}`,
+        apiUrl,
         { profilePicture: uploadResponse.data.secure_url },
         { 
           withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
           timeout: 10000
         }
       );
@@ -132,25 +169,61 @@ const Profile = () => {
 
   const onSubmit = async (newData) => {
     try {
-      await axios.patch(`${apiUri}/users/${user.user._id}`, {
-        name: newData.name,
-        profile: {...data.profile, bio: newData.bio}
-      }, {withCredentials:true});
+      const apiUrl = import.meta.env.DEV 
+        ? `/api/users/${user.user._id}` 
+        : `${apiUri}/api/users/${user.user._id}`;
+      
+      console.log('Updating profile at:', apiUrl);
+      
+      await axios.patch(
+        apiUrl,
+        {
+          name: newData.name,
+          profile: {...data.profile, bio: newData.bio}
+        },
+        {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        }
+      );
       refetch();
-      reset()
-      setEditMode(false)
+      reset();
+      setEditMode(false);
+      toast.success('Profile updated successfully');
     } catch (error) {
       console.error('Patch error:', error);
+      toast.error(error.response?.data?.message || 'Failed to update profile');
     }
   }
 
-  async function handleDelete(id){
+  async function handleDelete(id) {
     try {
-      await axios.delete(`${apiUri}/rides/${id}`, {withCredentials:true});
+      const apiUrl = import.meta.env.DEV 
+        ? `/api/rides/${id}` 
+        : `${apiUri}/api/rides/${id}`;
+      
+      console.log('Deleting ride at:', apiUrl);
+      
+      await axios.delete(
+        apiUrl,
+        {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        }
+      );
       refetch();
-      toast("The ride has been Deleted")
+      toast.success("The ride has been deleted");
     } catch (error) {
       console.error('Error deleting item:', error);
+      toast.error(error.response?.data?.message || 'Failed to delete ride');
     }
   }
 

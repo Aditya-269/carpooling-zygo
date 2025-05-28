@@ -29,31 +29,61 @@ const NotificationBell = () => {
 
   const fetchNotifications = async () => {
     try {
-      const response = await axios.get(`${apiUri}/notifications`, {
+      const apiUrl = import.meta.env.DEV 
+        ? `/api/notifications` 
+        : `${import.meta.env.VITE_REACT_API_URI}/notifications`;
+      
+      console.log('Fetching notifications from:', apiUrl);
+      
+      const response = await axios.get(apiUrl, {
         withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
       });
       setNotifications(response.data);
       setUnreadCount(response.data.filter(n => !n.read).length);
     } catch (error) {
       console.error('Error fetching notifications:', error);
+      if (error.response?.status === 401) {
+        // Handle unauthorized access
+        console.log('User not authenticated');
+      } else {
+        toast.error('Failed to fetch notifications');
+      }
     }
   };
 
   useEffect(() => {
-    fetchNotifications();
     if (user && user.user && user.user._id) {
+      fetchNotifications();
+      
       // Connect to Socket.IO
       socketRef.current = io(socketUri, {
         withCredentials: true,
         transports: ["websocket"],
+        extraHeaders: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
       });
+
       // Authenticate/join room
       socketRef.current.emit("authenticate", user.user._id);
+      
       // Listen for notification events
       socketRef.current.on("notification", (notification) => {
         setNotifications(prev => [notification, ...prev]);
         setUnreadCount(prev => prev + 1);
         toast.success("New notification received!");
+      });
+
+      // Handle connection errors
+      socketRef.current.on("connect_error", (error) => {
+        console.error("Socket connection error:", error);
       });
     }
     return () => {
@@ -61,7 +91,6 @@ const NotificationBell = () => {
         socketRef.current.disconnect();
       }
     };
-    // eslint-disable-next-line
   }, [user && user.user && user.user._id]);
 
   const handleMarkAsRead = async (notificationId) => {
