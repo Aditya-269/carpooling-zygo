@@ -64,6 +64,33 @@ app.use((req, res, next) => {
 app.use(cookieParser())
 app.use(express.json())
 
+// Add authentication check middleware
+app.use((req, res, next) => {
+  // Skip auth check for OPTIONS requests
+  if (req.method === 'OPTIONS') {
+    return next();
+  }
+  
+  // Skip auth check for public routes
+  const publicRoutes = ['/api/auth/login', '/api/auth/register'];
+  if (publicRoutes.includes(req.path)) {
+    return next();
+  }
+
+  // Check for authentication token
+  const token = req.cookies.access_token;
+  if (!token) {
+    console.log('No token found in request:', {
+      path: req.path,
+      cookies: req.cookies,
+      headers: req.headers
+    });
+    return res.status(401).json({ message: 'Not authenticated' });
+  }
+
+  next();
+});
+
 // API Routes
 app.use("/api/users", userRoute);
 app.use("/api/auth", authRoute);
@@ -106,28 +133,6 @@ if (process.env.NODE_ENV === 'production') {
     res.sendFile(path.join(__dirname, '../client/dist', 'index.html'));
   });
 }
-
-// Add authentication check middleware
-app.use((req, res, next) => {
-  // Skip auth check for OPTIONS requests
-  if (req.method === 'OPTIONS') {
-    return next();
-  }
-  
-  // Skip auth check for public routes
-  const publicRoutes = ['/api/auth/login', '/api/auth/register'];
-  if (publicRoutes.includes(req.path)) {
-    return next();
-  }
-
-  // Check for authentication token
-  const token = req.cookies.access_token;
-  if (!token) {
-    return res.status(401).json({ message: 'Not authenticated' });
-  }
-
-  next();
-});
 
 // Error handling middleware
 app.use((err, req, res, next) => {
