@@ -48,21 +48,24 @@ const connectDB = (url) => {
 // Attach io to app for access in controllers
 app.set("io", io);
 
-//middlewares
-app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
+// Add CORS headers to all responses before other middleware
+app.use((req, res, next) => {
+  const allowedOrigins = process.env.NODE_ENV === 'production' 
     ? ['https://carpooling-zygo.vercel.app', process.env.ORIGIN]
-    : ['http://localhost:5173', 'http://127.0.0.1:5173'],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
-  exposedHeaders: ['set-cookie'],
-  preflightContinue: false,
-  optionsSuccessStatus: 204,
-  maxAge: 86400 // 24 hours
-}));
+    : ['http://localhost:5173', 'http://127.0.0.1:5173'];
+  
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Max-Age', '86400');
+  }
+  next();
+});
 
-// Handle preflight requests explicitly
+// Handle preflight requests
 app.options('*', (req, res) => {
   const allowedOrigins = process.env.NODE_ENV === 'production' 
     ? ['https://carpooling-zygo.vercel.app', process.env.ORIGIN]
@@ -81,19 +84,19 @@ app.options('*', (req, res) => {
   }
 });
 
-// Add CORS headers to all responses
-app.use((req, res, next) => {
-  const allowedOrigins = process.env.NODE_ENV === 'production' 
+// Regular CORS middleware
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
     ? ['https://carpooling-zygo.vercel.app', process.env.ORIGIN]
-    : ['http://localhost:5173', 'http://127.0.0.1:5173'];
-  
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin);
-    res.header('Access-Control-Allow-Credentials', 'true');
-  }
-  next();
-});
+    : ['http://localhost:5173', 'http://127.0.0.1:5173'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  exposedHeaders: ['set-cookie'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
+  maxAge: 86400 // 24 hours
+}));
 
 // Add authentication check middleware
 app.use((req, res, next) => {
