@@ -30,7 +30,11 @@ export const register = async (req, res, next) => {
     return res
     .status(200)
     .cookie("accessToken", accessToken, options)
-    .json({ user: { ...otherDetails }, isAdmin });
+    .json({ 
+      user: { ...otherDetails }, 
+      isAdmin,
+      accessToken
+    });
   }catch(err){
     next(err);
   }
@@ -56,7 +60,11 @@ export const login = async(req, res, next)=>{
     return res
     .status(200)
     .cookie("accessToken", accessToken, options)
-    .json({ user: { ...otherDetails }, isAdmin });
+    .json({ 
+      user: { ...otherDetails }, 
+      isAdmin,
+      accessToken
+    });
 
   }catch(err){
     next(err);

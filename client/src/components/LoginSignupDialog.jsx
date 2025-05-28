@@ -44,7 +44,12 @@ const LoginSignupDialog = () => {
       console.log('Login response:', res);
 
       if (res.status === 200) {
-        dispatch({ type: "LOGIN_SUCCESS", payload: res.data });
+        // Store the access token in the user state
+        const userData = {
+          ...res.data,
+          accessToken: res.data.accessToken // Make sure the token is included
+        };
+        dispatch({ type: "LOGIN_SUCCESS", payload: userData });
         setLoginData({ email: "", password: "" });
         toast.success("Login successful!");
       } else {
