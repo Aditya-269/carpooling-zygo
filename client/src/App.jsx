@@ -21,6 +21,7 @@ function App() {
     <Header />
     <Routes>
       <Route path="/" element={<Home />} />
+      <Route path="/*" element={<Error />} />
       <Route path="/search" element={<SearchPage />} />
       <Route path="/offer-seat" element={<OfferSeat />} />
       <Route path="/ride/:rideId" element={<RideDetail />} />
@@ -30,7 +31,6 @@ function App() {
       <Route path="/ride/:rideId/payment" element={<Payment />} />
       <Route path="/ride/:rideId/complete" element={<RideComplete />} />
       <Route path="/profile" element={<Profile />} />
-      <Route path="/*" element={<Error />} />
     </Routes>
     <Footer />
     </>
