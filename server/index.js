@@ -98,13 +98,21 @@ io.on("connection", (socket) => {
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {
-  // Serve static files from the React app
-  app.use(express.static(path.join(__dirname, '../client/dist')));
+  try {
+    // Serve static files from the React app
+    app.use(express.static(path.join(__dirname, '../client/dist')));
 
-  // Handle React routing, return all requests to React app
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../client/dist', 'index.html'));
-  });
+    // Handle React routing, return all requests to React app
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(__dirname, '../client/dist', 'index.html'));
+    });
+  } catch (error) {
+    console.error('Error serving static files:', error);
+    // If static files are not available, just serve the API
+    app.get('*', (req, res) => {
+      res.json({ message: 'API is running' });
+    });
+  }
 }
 
 // Add authentication check middleware
