@@ -40,7 +40,7 @@ const Profile = () => {
       setCarbonLoading(true)
       const apiUrl = import.meta.env.DEV 
         ? `/api/users/${user.user._id}/carbon-savings` 
-        : `${apiUri}/users/${user.user._id}/carbon-savings`
+        : `${apiUri}/api/users/${user.user._id}/carbon-savings`
       
       console.log('Fetching carbon savings from:', apiUrl)
       
@@ -125,7 +125,7 @@ const Profile = () => {
       
       const apiUrl = import.meta.env.DEV 
         ? `/api/users/${user.user._id}` 
-        : `${apiUri}/users/${user.user._id}`
+        : `${apiUri}/api/users/${user.user._id}`
       
       console.log('Updating profile at:', apiUrl)
       
@@ -181,9 +181,7 @@ const Profile = () => {
 
     setIsSubmitting(true)
     try {
-      const apiUrl = import.meta.env.DEV 
-        ? `/api/users/${user.user._id}`
-        : `${apiUri}/users/${user.user._id}`
+      const apiUrl = `/api/users/${user.user._id}`
       
       console.log('Updating profile at:', apiUrl)
       

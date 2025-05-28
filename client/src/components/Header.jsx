@@ -23,16 +23,10 @@ const Header = () => {
 
   const handleLogout = async () => {
     try {
-      const apiUrl = import.meta.env.DEV 
-        ? `/api/auth/logout`
-        : `${apiUri}/auth/logout`;
-      
-      await axios.get(apiUrl, {
+      await axios.get(`${apiUri}/auth/logout`, {
         withCredentials: true,
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest'
+          'Content-Type': 'application/json'
         }
       });
       dispatch({ type: 'LOGOUT' });
