@@ -28,6 +28,19 @@ export default defineConfig(({ mode }) => {
       'process.env': env,
       // Ensure VITE_ prefixed variables are available
       'import.meta.env.VITE_GOOGLE_MAPS_API_KEY': JSON.stringify(env.VITE_GOOGLE_MAPS_API_KEY)
+    },
+    // Add base URL for production
+    base: '/',
+    // Add build configuration
+    build: {
+      outDir: 'dist',
+      assetsDir: 'assets',
+      // Ensure proper handling of client-side routing
+      rollupOptions: {
+        output: {
+          manualChunks: undefined
+        }
+      }
     }
   }
 })

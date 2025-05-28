@@ -15,6 +15,9 @@ import { Calendar } from "./ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { cn } from "@/lib/utils";
 import { format, isSameDay, isAfter } from "date-fns";
+import { useContext } from "react";
+import { AuthContext } from "@/context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const apiUri = import.meta.env.VITE_REACT_API_URI
 
@@ -43,6 +46,8 @@ const formSchema = z.object({
 });
 
 const PublishCard = () => {
+  const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -59,6 +64,13 @@ const PublishCard = () => {
   });
 
   const onSubmit = async (data) => {
+    // Check if user is authenticated
+    if (!user?.user?._id) {
+      toast.error("Please log in to create a ride");
+      navigate("/"); // Redirect to home or login page
+      return;
+    }
+
     try {
       // Ensure we have coordinates for both locations
       if (!data.fromCoordinates || !data.toCoordinates) {
@@ -108,13 +120,18 @@ const PublishCard = () => {
       const response = await axios.post(`${apiUri}/api/rides`, body, {
         withCredentials: true,
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         }
       });
 
       if (response.status === 201 || response.status === 200) {
         toast.success("Ride created successfully!");
         form.reset();
+        // Optionally redirect to the ride details page
+        if (response.data?._id) {
+          navigate(`/ride/${response.data._id}`);
+        }
       } else {
         throw new Error('Unexpected response from server');
       }
@@ -124,12 +141,38 @@ const PublishCard = () => {
       console.error('Error status:', error.response?.status);
       console.error('Error headers:', error.response?.headers);
       
+      if (error.response?.status === 401) {
+        toast.error("Your session has expired. Please log in again.");
+        navigate("/"); // Redirect to home or login page
+        return;
+      }
+      
       const errorMessage = error.response?.data?.message || 
                           error.response?.data?.error || 
                           'Failed to create ride. Please try again.';
       toast.error(errorMessage);
     }
   };
+
+  // If user is not authenticated, show a message
+  if (!user?.user?._id) {
+    return (
+      <Card className="w-[350px]">
+        <CardHeader>
+          <CardTitle>Authentication Required</CardTitle>
+          <CardDescription>Please log in to create a ride.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button 
+            onClick={() => navigate("/")} 
+            className="w-full"
+          >
+            Go to Login
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const availableTags = ['AC', 'Music', 'Pet Friendly', 'No Smoking', 'Ladies Only', 'Express Route'];
 
