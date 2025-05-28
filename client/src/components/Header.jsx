@@ -23,7 +23,7 @@ const Header = () => {
 
   const handleLogout = async () => {
     try {
-      await axios.get(`${apiUri}/api/auth/logout`, {
+      await axios.get(`${apiUri}/auth/logout`, {
         withCredentials: true,
         headers: {
           'Content-Type': 'application/json'

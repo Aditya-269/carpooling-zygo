@@ -22,7 +22,7 @@ const RideDetail = () => {
 
   const handleBook = async() => {
     try{
-      const res = await axios.get(`${apiUri}/api/rides/${rideId}/join`, {withCredentials: true})
+      const res = await axios.get(`${apiUri}/rides/${rideId}/join`, {withCredentials: true})
       toast.success("Booking successful!");
       navigate(`/ride/${rideId}/confirmed`, { state: { rideData: data } });
     }catch(err){

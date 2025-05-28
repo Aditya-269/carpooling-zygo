@@ -29,7 +29,7 @@ const NotificationBell = () => {
 
   const fetchNotifications = async () => {
     try {
-      const response = await axios.get(`${apiUri}/api/notifications`, {
+      const response = await axios.get(`${apiUri}/notifications`, {
         withCredentials: true,
       });
       setNotifications(response.data);
@@ -67,7 +67,7 @@ const NotificationBell = () => {
   const handleMarkAsRead = async (notificationId) => {
     try {
       await axios.patch(
-        `${apiUri}/api/notifications/${notificationId}/read`,
+        `${apiUri}/notifications/${notificationId}/read`,
         {},
         { withCredentials: true }
       );
@@ -80,7 +80,7 @@ const NotificationBell = () => {
   const handleMarkAllAsRead = async () => {
     try {
       await axios.patch(
-        `${apiUri}/api/notifications/read-all`,
+        `${apiUri}/notifications/read-all`,
         {},
         { withCredentials: true }
       );

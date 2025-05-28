@@ -33,28 +33,33 @@ const Payment = () => {
     try {
       setIsProcessing(true);
       console.log('Payment successful, saving data...');
-      
       // Save payment data to backend
+      const paymentData = {
+        rideId,
+        paymentId: details.id,
+        amount: rideData.price,
+        currency: 'INR',
+        status: 'completed',
+        paymentMethod: 'paypal',
+        paymentDetails: details
+      };
+
       const response = await axios.post(
-        `${apiUri}/api/payments`,
-        {
-          rideId,
-          amount: convertToUSD(rideData.price),
-          currency: "USD"
-        },
+        `${apiUri}/payments`,
+        paymentData,
         { withCredentials: true }
       );
 
       console.log('Payment saved:', response.data);
 
-      // Update ride status to completed and calculate carbon savings
+      // Update ride status to completed
       try {
-        await axios.post(
-          `${apiUri}/api/rides/${rideId}/complete`,
+        await axios.put(
+          `${apiUri}/rides/${rideId}/complete`,
           {},
           { withCredentials: true }
         );
-        console.log('Ride marked as completed and carbon savings calculated');
+        console.log('Ride marked as completed');
         
         // Navigate to complete page
         navigate(`/ride/${rideId}/complete`, { replace: true });

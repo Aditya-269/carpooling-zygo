@@ -64,10 +64,6 @@ const rideSchema = new mongoose.Schema({
       trim: true,
     },
   },
-  carbonSavedRide: {
-    type: Number,
-    default: 0,
-  },
   chat: [ 
     {
       sender: {

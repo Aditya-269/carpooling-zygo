@@ -9,11 +9,9 @@ const useFetch = (endpoint, includeCredentials = false) => {
   const [data, setData] = useState(null)
   const [error, setError] = useState(null)
 
-  const url = `${baseURL}/api/${endpoint}`;
+  const url = `${baseURL}/${endpoint}`;
 
   useEffect(() => {
-    if (!endpoint) return; // Don't fetch if no endpoint is provided
-    
     setLoading(true)
     const axiosConfig = includeCredentials ? { withCredentials: true } : {};
     axios
@@ -33,11 +31,9 @@ const useFetch = (endpoint, includeCredentials = false) => {
         setLoading(false)
       })
     
-  }, [url, includeCredentials, endpoint])
+  }, [url, includeCredentials])
 
   function refetch(){
-    if (!endpoint) return; // Don't fetch if no endpoint is provided
-    
     setLoading(true)
     const axiosConfig = includeCredentials ? { withCredentials: true } : {};
     axios
