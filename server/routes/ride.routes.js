@@ -4,12 +4,10 @@ import { verifyAdmin, verifyToken, verifyUser } from "../utils/verifyToken.js";
 
 const router = express.Router()
 
-// Specific routes first
-router.get("/find", findRides)
 router.get("/", verifyAdmin, getAllRides)
 router.post("/", verifyToken, createRide)
+router.get("/find", findRides)
 
-// Parameter routes last
 router.get("/:id", getRide)
 router.get("/:id/join", verifyToken, joinRide)
 router.post("/:id/rate", verifyToken, rateRide)
