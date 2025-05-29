@@ -39,7 +39,9 @@ export default defineConfig(({ mode }) => {
       port: 5173,
       proxy: {
         '/api': {
-          target: 'https://carpooling-zygo.onrender.com',
+          target: process.env.NODE_ENV === 'production'
+            ? 'https://carpooling-zygo.onrender.com'
+            : 'http://localhost:8080',
           changeOrigin: true,
           secure: false,
           ws: true,

@@ -61,21 +61,7 @@ const MeetDriver = () => {
           </div>
         </Card>
 
-        <div className="h-64 bg-muted rounded-lg mb-6 overflow-hidden">
-          {/* Google Map integration */}
-          {rideData?.origin?.coordinates ? (
-            <GoogleMap
-              lat={rideData.origin.coordinates[1]}
-              lng={rideData.origin.coordinates[0]}
-              zoom={15}
-              style={{ width: '100%', height: '100%' }}
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <p className="text-muted-foreground">Map not available</p>
-            </div>
-          )}
-        </div>
+       
 
         <Link to={`/ride/${rideId}/tracking`}>
           <Button className="w-full">Start Ride</Button>
