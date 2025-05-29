@@ -1,4 +1,3 @@
- # RideShare - Modern Carpooling Platform
 
 A full-stack carpooling application that connects drivers and passengers for shared rides, built with React, Node.js, and MongoDB.
 
@@ -111,7 +110,6 @@ npm run dev
 - React Router
 - Redux
 - React Hook Form
-- Zod
 - PayPal Integration
 
 ### Backend
