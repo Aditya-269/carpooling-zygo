@@ -1,5 +1,4 @@
 import { createContext, useEffect, useReducer, useContext } from "react"
-import axios from "axios";
 
 const INITIAL_STATE = {
   user: JSON.parse(localStorage.getItem("user")) || null,
@@ -55,41 +54,7 @@ export const AuthContextProvider = ({children}) => {
   useEffect(() => {
     localStorage.setItem("user", JSON.stringify(state.user))
   }, [state.user])
-
-  // Set up axios interceptors
-  useEffect(() => {
-    // Request interceptor
-    const requestInterceptor = axios.interceptors.request.use(
-      (config) => {
-        // Add token to all requests if it exists
-        if (state.user?.accessToken) {
-          config.headers.Authorization = `Bearer ${state.user.accessToken}`;
-        }
-        return config;
-      },
-      (error) => {
-        return Promise.reject(error);
-      }
-    );
-
-    // Response interceptor
-    const responseInterceptor = axios.interceptors.response.use(
-      (response) => response,
-      (error) => {
-        if (error.response?.status === 401) {
-          // Handle unauthorized access
-          dispatch({ type: "LOGOUT" });
-        }
-        return Promise.reject(error);
-      }
-    );
-
-    // Cleanup interceptors on unmount
-    return () => {
-      axios.interceptors.request.eject(requestInterceptor);
-      axios.interceptors.response.eject(responseInterceptor);
-    };
-  }, [state.user]);
+  
 
   return (
     <AuthContext.Provider
