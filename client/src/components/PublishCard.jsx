@@ -15,8 +15,6 @@ import { Calendar } from "./ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { cn } from "@/lib/utils";
 import { format, isSameDay, isAfter } from "date-fns";
-import { useContext } from "react";
-import { AuthContext } from "@/context/AuthContext";
 
 const apiUri = import.meta.env.DEV ? '/api' : import.meta.env.VITE_REACT_API_URI;
 
@@ -45,7 +43,6 @@ const formSchema = z.object({
 });
 
 const PublishCard = () => {
-  const { user } = useContext(AuthContext);
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -113,8 +110,7 @@ const PublishCard = () => {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest',
-          'Authorization': `Bearer ${user?.accessToken}`
+          'X-Requested-With': 'XMLHttpRequest'
         }
       });
 
