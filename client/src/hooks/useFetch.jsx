@@ -12,7 +12,7 @@ const useFetch = (url) => {
         setLoading(true)
         const apiUrl = import.meta.env.DEV 
           ? `/api/${url}` 
-          : `${import.meta.env.VITE_REACT_API_URI}/${url}`;
+          : `${import.meta.env.VITE_REACT_API_URI}/api/${url}`;
         
         console.log('Fetching from:', apiUrl);
         
