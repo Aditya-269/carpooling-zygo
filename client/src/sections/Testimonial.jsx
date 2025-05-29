@@ -4,21 +4,21 @@ import { Quote, Star } from "lucide-react"
 const Testimonial = () => {
   const feedback = [
     {
-      desc: "RideShare made my daily commute a breeze! The app is user-friendly, and I've met some wonderful people through carpooling. Thank you RideShare for providing such a fantastic service.",
+      desc: "Zygo made my daily commute a breeze! The app is user-friendly, and I've met some wonderful people through carpooling. Thank you Zygo for providing such a fantastic service.",
       img: "https://dummyimage.com/106x106",
       user: "John",
       prof: "UI Developer",
       rating: 5
     },
     {
-      desc: "Ever since I started using RideShare, my daily commute has transformed into a seamless and enjoyable experience. The convenience and reliability of this app have truly exceeded my expectations.",
+      desc: "Ever since I started using Zygo, my daily commute has transformed into a seamless and enjoyable experience. The convenience and reliability of this app have truly exceeded my expectations.",
       img: "https://dummyimage.com/106x106",
       user: "Sarah",
       prof: "Backend Developer",
       rating: 5
     },
     {
-      desc: "I just had to share my recent experience with RideShare because it has truly been a game-changer for me! From the easy sign-up process to the consistently reliable service.",
+      desc: "I just had to share my recent experience with Zygo because it has truly been a game-changer for me! From the easy sign-up process to the consistently reliable service.",
       img: "https://dummyimage.com/106x106",
       user: "Michael",
       prof: "Product Manager",
